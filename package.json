@@ -1,0 +1,63 @@
+{
+  "name": "lawhelpzone-frontend",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Modern legal services platform with real-time chat, video calls, and notifications",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-toast": "^1.2.15",
+    "@reduxjs/toolkit": "^2.11.2",
+    "axios": "^1.13.2",
+    "class-variance-authority": "^0.7.1",
+    "date-fns": "^3.6.0",
+    "dotenv": "^17.2.3",
+    "framer-motion": "^12.29.0",
+    "lucide-react": "^0.544.0",
+    "next": "15.5.3",
+    "next-themes": "^0.4.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-redux": "^9.2.0",
+    "recharts": "^3.7.0",
+    "socket.io-client": "^4.8.3",
+    "sonner": "^2.0.7",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "25.3.2",
+    "@types/react": "19.2.14",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "15.5.3",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^4"
+  },
+  "keywords": [
+    "legal",
+    "platform",
+    "nextjs",
+    "react",
+    "redux",
+    "socket.io",
+    "real-time",
+    "chat",
+    "video-calls"
+  ],
+  "author": "LawHelpZone Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

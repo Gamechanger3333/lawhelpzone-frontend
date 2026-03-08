@@ -1,0 +1,313 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+root {
+  --bg:           #f8fafc;
+  --card-bg:      #ffffff;
+  --border:       #e2e8f0;
+  --text:         #1e293b;
+  --text-h:       #0f172a;
+  --text-muted:   #64748b;
+  --input-bg:     #ffffff;
+  --disabled-bg:  #f8fafc;
+  --label:        #64748b;
+  --row-bg:       #f8fafc;
+  --row-hover:    #f1f5f9;
+  --sidebar-bg:   #ffffff;
+  --nav-bg:       #0A1A3F;
+  --sk:           #e2e8f0;
+  --conv-hover:   #f8fafc;
+  --day-bg:       #f8fafc;
+  --attach-hover: #f1f5f9;
+}
+
+.dark {
+  --bg:           #0a0f1a;
+  --card-bg:      #0f172a;
+  --border:       #1e293b;
+  --text:         #e2e8f0;
+  --text-h:       #f1f5f9;
+  --text-muted:   #94a3b8;
+  --input-bg:     #1e293b;
+  --disabled-bg:  #1e293b;
+  --label:        #94a3b8;
+  --row-bg:       #1a2234;
+  --row-hover:    #1e293b;
+  --sidebar-bg:   #0f172a;
+  --nav-bg:       #060d1a;
+  --sk:           #1e293b;
+  --conv-hover:   #1e293b;
+  --day-bg:       #0f172a;
+  --attach-hover: #1e293b;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   LawHelpZone — Global Theme CSS Variables
+   Add this to your globals.css or layout.css
+   These variables power all dashboard pages' inline styles.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Light mode defaults ─────────────────────────────────────────── */
+:root {
+  --text-heading:   #0f172a;
+  --text-primary:   #374151;
+  --text-muted:     #64748b;
+  --text-subtle:    #94a3b8;
+
+  --card-bg:        #ffffff;
+  --page-bg:        #f8fafc;
+  --input-bg:       #ffffff;
+  --input-readonly: #f8fafc;
+  --input-border:   #e2e8f0;
+
+  --border-color:   #e2e8f0;
+  --border-subtle:  #f1f5f9;
+
+  --sidebar-bg:     #ffffff;
+  --header-bg:      #ffffff;
+  --chat-bg:        #f8fafc;
+
+  --conv-hover:     #f1f5f9;
+  --row-hover:      #f8fafc;
+  --toggle-off:     #e2e8f0;
+  --day-bg:         #f8fafc;
+
+  --attach-bg:      #f8fafc;
+  --attach-hover:   #f1f5f9;
+  --attach-border:  #e2e8f0;
+
+  --bubble-other-bg:     #ffffff;
+  --bubble-other-color:  #0f172a;
+  --bubble-other-border: #f1f5f9;
+
+  --sk: #e2e8f0;  /* skeleton loader */
+}
+
+/* ── Dark mode overrides ─────────────────────────────────────────── */
+html.dark,
+.dark {
+  --text-heading:   #f1f5f9;
+  --text-primary:   #e2e8f0;
+  --text-muted:     #94a3b8;
+  --text-subtle:    #64748b;
+
+  --card-bg:        #1e293b;
+  --page-bg:        #0f172a;
+  --input-bg:       #1e293b;
+  --input-readonly: #0f172a;
+  --input-border:   #334155;
+
+  --border-color:   #334155;
+  --border-subtle:  #1e293b;
+
+  --sidebar-bg:     #0f172a;
+  --header-bg:      #0f172a;
+  --chat-bg:        #0a0f1a;
+
+  --conv-hover:     #1a2234;
+  --row-hover:      #1a2234;
+  --toggle-off:     #334155;
+  --day-bg:         #1e293b;
+
+  --attach-bg:      #1e293b;
+  --attach-hover:   #334155;
+  --attach-border:  #334155;
+
+  --bubble-other-bg:     #1e293b;
+  --bubble-other-color:  #f1f5f9;
+  --bubble-other-border: #334155;
+
+  --sk: #1e293b;
+}
+
+/* ── Shared animations ───────────────────────────────────────────── */
+@keyframes fd {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes sk {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Utility: ensure text color responds to theme ────────────────── */
+/* Apply these classes wherever hardcoded colors are used */
+.t-heading { color: var(--text-heading) !important; }
+.t-primary  { color: var(--text-primary) !important; }
+.t-muted    { color: var(--text-muted) !important; }
+.t-subtle   { color: var(--text-subtle) !important; }
+.bg-card    { background: var(--card-bg) !important; }
+.border-theme { border-color: var(--border-color) !important; }
+
+/* ── Fix: hardcoded black text in dark mode ──────────────────────── */
+.dark p,
+.dark span,
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark label {
+  /* Only override if no explicit color is set via inline style */
+  color: inherit;
+}
+
+/* Scrollbar theming */
+.dark ::-webkit-scrollbar-track { background: #0f172a; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar            { width: 6px; height: 6px; }
+::-webkit-scrollbar-track      { background: #f1f5f9; }
+::-webkit-scrollbar-thumb      { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover{ background: #94a3b8; }
+
+
+/* ── Auto dark mode for all landing page text ────────────────────── */
+
+/* Headings */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6 {
+  color: var(--text-heading, #f1f5f9) !important;
+}
+
+/* Body text / paragraphs */
+html.dark p,
+html.dark span,
+html.dark li,
+html.dark a {
+  color: var(--text-primary, #e2e8f0);
+}
+
+/* Muted / subtitle text (small tags and common muted classes) */
+html.dark small,
+html.dark .text-gray-400,
+html.dark .text-gray-500,
+html.dark .text-gray-600,
+html.dark .text-slate-500,
+html.dark .text-slate-600 {
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+/* Dark text classes → flip to light */
+html.dark .text-gray-700,
+html.dark .text-gray-800,
+html.dark .text-gray-900,
+html.dark .text-slate-700,
+html.dark .text-slate-800,
+html.dark .text-slate-900,
+html.dark .text-blue-950,
+html.dark .text-blue-900 {
+  color: var(--text-heading, #f1f5f9) !important;
+}
+
+/* Section / card backgrounds */
+html.dark section,
+html.dark .bg-white,
+html.dark .bg-gray-50,
+html.dark .bg-slate-50 {
+  background-color: var(--page-bg, #0f172a) !important;
+}
+
+/* Cards */
+html.dark .rounded-lg,
+html.dark .rounded-xl,
+html.dark .rounded-2xl {
+  background-color: var(--card-bg, #1e293b);
+  border-color: var(--border-color, #334155);
+}
+
+/* Borders */
+html.dark .border,
+html.dark .border-gray-100,
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: var(--border-color, #334155) !important;
+}
+
+/* Inputs */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background: var(--input-bg, #1e293b) !important;
+  color: var(--text-primary, #e2e8f0) !important;
+  border-color: var(--border-color, #334155) !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+/* Stars / rating text — keep yellow */
+html.dark .text-yellow-400,
+html.dark .text-yellow-500 {
+  color: #facc15 !important;
+}
+
+/* Keep blue accent links/buttons as-is */
+html.dark .text-blue-600,
+html.dark .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+/* Footer — usually dark already, keep readable */
+html.dark footer {
+  background-color: var(--nav-bg, #060d1a) !important;
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+html.dark footer a {
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+html.dark footer a:hover {
+  color: var(--text-heading, #f1f5f9) !important;
+}
+
+/* ── Auth pages (login / signup) dark mode ── */
+html.dark .auth-page-bg,
+html.dark [class*="min-h-screen"] {
+  background: var(--page-bg, #0f172a) !important;
+}
+
+html.dark .auth-card,
+html.dark [class*="rounded"][class*="bg-white"] {
+  background: var(--card-bg, #1e293b) !important;
+  border: 1px solid var(--border-color, #334155) !important;
+}
+
+html.dark label,
+html.dark .text-gray-500,
+html.dark .text-gray-600 {
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+
