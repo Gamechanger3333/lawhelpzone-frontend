@@ -1,6 +1,6 @@
 "use client";
 // app/search/page.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, Star, CheckCircle, Filter, Loader2, ChevronDown, MessageSquare, Video } from "lucide-react";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
@@ -21,7 +21,8 @@ const SORT_OPTIONS = [
   { value: "fee_desc",  label: "Highest Fee"     },
 ];
 
-export default function SearchPage() {
+/* ── Inner Page Content (uses useSearchParams) ───────────────────────────── */
+function SearchContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { goToMessages, goToVideoCall } = useProtectedAction();
@@ -38,7 +39,6 @@ export default function SearchPage() {
   const fetchLawyers = useCallback(async (q, cat, s, p = 1, append = false) => {
     setLoading(true);
     try {
-      // Use the same /api/lawyers endpoint as BrowseLawyersPage
       const params = new URLSearchParams({ limit: 12 });
       if (q)   params.set("search", q);
       if (cat && cat !== "All") params.set("specialization", cat);
@@ -51,7 +51,6 @@ export default function SearchPage() {
       let list   = data.lawyers || (Array.isArray(data) ? data : []);
       const tot  = data.pagination?.total ?? list.length;
 
-      // Client-side sort
       list.sort((a, b) => {
         if (s === "rating")   return (b.lawyerProfile?.rating || 0) - (a.lawyerProfile?.rating || 0);
         if (s === "fee_asc")  return (a.lawyerProfile?.consultationFee || 0) - (b.lawyerProfile?.consultationFee || 0);
@@ -72,7 +71,7 @@ export default function SearchPage() {
   }, []);
 
   useEffect(() => {
-    const q   = searchParams.get("query") || searchParams.get("search") || "";
+    const q = searchParams.get("query") || searchParams.get("search") || "";
     setQuery(q);
     fetchLawyers(q, category, sort, 1);
   }, [searchParams]);
@@ -278,5 +277,14 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Default Export wrapped in Suspense ──────────────────────────────────── */
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

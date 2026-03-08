@@ -1,6 +1,6 @@
 "use client";
 // app/browse-lawyers/page.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Star, MapPin, MessageSquare, Video,
@@ -111,7 +111,6 @@ function LawyerCard({ lawyer, onMessage, onCall, index }) {
               <span style={{ fontSize: 12, color: "#10b981", fontWeight: 700 }}>Free Consultation</span>
             )}
           </div>
-          {/* ── Protected contact buttons ────────────────────────────────── */}
           <div style={{ display: "flex", gap: 8 }}>
             <button
               onClick={() => onMessage(lawyer)}
@@ -134,8 +133,8 @@ function LawyerCard({ lawyer, onMessage, onCall, index }) {
   );
 }
 
-/* ── Page ────────────────────────────────────────────────────────────────── */
-export default function BrowseLawyersPage() {
+/* ── Inner Page Content (uses useSearchParams) ───────────────────────────── */
+function BrowseLawyersContent() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { goToMessages, goToVideoCall } = useProtectedAction();
@@ -155,7 +154,6 @@ export default function BrowseLawyersPage() {
     try {
       const params = new URLSearchParams({ limit: 100 });
 
-      // Support both URL ?search= and the shared LawyerSearchDropdown navigation
       const urlSearch = searchOverride ?? searchParams.get("search") ?? searchParams.get("query") ?? "";
       if (urlSearch) params.set("search", urlSearch);
 
@@ -191,7 +189,6 @@ export default function BrowseLawyersPage() {
 
   useEffect(() => { load(); }, [spec, sortBy, available, searchParams]);
 
-  // ── Protected contact handlers — redirect to login if not authenticated ──
   const handleMessage = (l) => goToMessages(l._id, "/browse-lawyers");
   const handleCall    = (l) => goToVideoCall(l._id, "/browse-lawyers");
 
@@ -224,7 +221,7 @@ export default function BrowseLawyersPage() {
               ))}
             </div>
 
-            {/* ── Shared search component ─────────────────────────────────── */}
+            {/* Search */}
             <div style={{ maxWidth: 600, margin: "0 auto" }}>
               <LawyerSearchDropdown
                 redirectPath="/browse-lawyers"
@@ -353,5 +350,14 @@ export default function BrowseLawyersPage() {
         </div>
       </div>
     </>
+  );
+}
+
+/* ── Default Export wrapped in Suspense ──────────────────────────────────── */
+export default function BrowseLawyersPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+      <BrowseLawyersContent />
+    </Suspense>
   );
 }
