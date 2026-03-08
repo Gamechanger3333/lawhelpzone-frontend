@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, Star, CheckCircle, Filter, Loader2, ChevronDown, MessageSquare, Video } from "lucide-react";
-import { useProtectedAction } from "../hooks/useProtectedAction";
+import { useProtectedAction } from "@/hooks/useProtectedAction";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken = () => typeof window !== "undefined" ? localStorage.getItem("token") : null;
