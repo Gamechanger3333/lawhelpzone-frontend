@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Phone, Mail, MessageCircle, Calendar, User, FileText, MapPin } from "lucide-react";
 
-const ContactLawyerPage = () => {
+function ContactLawyerContent() {
   const searchParams = useSearchParams();
 
   const lawyer = {
@@ -50,7 +50,7 @@ const ContactLawyerPage = () => {
             <img
               src={lawyer.image || "/images/default-lawyer.png"}
               alt={lawyer.name}
-              className="w-20 h-20 rounded-full object-cover "
+              className="w-20 h-20 rounded-full object-cover"
             />
             <div>
               <h1 className="text-2xl font-bold text-gray-900 mb-1">{lawyer.name}</h1>
@@ -177,6 +177,12 @@ const ContactLawyerPage = () => {
       </div>
     </div>
   );
-};
+}
 
-export default ContactLawyerPage;
+export default function ContactLawyerPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <ContactLawyerContent />
+    </Suspense>
+  );
+}
