@@ -1,21 +1,6 @@
 "use client";
 // app/dashboard/[role]/messages/page.jsx
-// Works for: admin/messages, lawyer/messages, client/messages
-// Features:
-//  ✅ ?contact=userId auto-opens chat (even if no prior messages)
-//  ✅ Multi-endpoint user lookup (universal → lawyer → admin)
-//  ✅ Profile modal with full user details
-//  ✅ File & image attachment upload
-//  ✅ Emoji picker
-//  ✅ Skeleton loading states
-//  ✅ Day separator labels (Today / Yesterday / date)
-//  ✅ Online dot indicator
-//  ✅ Unread badge on contacts
-//  ✅ Optimistic send + read receipts (✓ / ✓✓)
-//  ✅ New Conversation slide-in panel
-//  ✅ Dark mode CSS variables
-//  ✅ 3-second message polling
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAppSelector } from "../../../../store/index";
 import {
@@ -44,12 +29,10 @@ const fmtDay = (d) => {
   } catch { return ""; }
 };
 
-// ── Skeleton placeholder ─────────────────────────────────────────────
 function Skeleton({ w = "100%", h = 16, r = 8 }) {
   return <div style={{ width: w, height: h, borderRadius: r, background: "var(--sk,#e2e8f0)", animation: "sk 1.4s ease infinite", flexShrink: 0 }} />;
 }
 
-// ── Avatar ───────────────────────────────────────────────────────────
 function Avatar({ user: u, size = 40 }) {
   const bg = ROLE_C[u?.role] || "#6366f1";
   return (
@@ -61,7 +44,6 @@ function Avatar({ user: u, size = 40 }) {
   );
 }
 
-// ── Profile Modal ────────────────────────────────────────────────────
 function ProfileModal({ user: u, onClose, onMessage, onCall }) {
   if (!u) return null;
   const rc = ROLE_C[u.role] || "#6366f1";
@@ -102,7 +84,6 @@ function ProfileModal({ user: u, onClose, onMessage, onCall }) {
   );
 }
 
-// ── New Conversation slide-in panel ──────────────────────────────────
 function NewConvPanel({ onClose, onSelect, myId }) {
   const [users,   setUsers]  = useState([]);
   const [search,  setSearch] = useState("");
@@ -112,13 +93,10 @@ function NewConvPanel({ onClose, onSelect, myId }) {
     const load = async () => {
       setL(true);
       try {
-        // Try dashboard allUsers first (works for all roles)
         const r = await fetch(`${API}/api/dashboard`, { credentials: "include", headers: HJ() });
         if (r.ok) { const d = await r.json(); setUsers(d.allUsers || []); return; }
-        // Fallback: admin users list
         const r2 = await fetch(`${API}/api/admin/users?limit=200`, { credentials: "include", headers: HJ() });
         if (r2.ok) { const d = await r2.json(); setUsers(d.users || []); return; }
-        // Fallback: lawyers list
         const r3 = await fetch(`${API}/api/lawyers?limit=50`, { credentials: "include", headers: HJ() });
         if (r3.ok) { const d = await r3.json(); setUsers(d.lawyers || []); }
       } catch {} finally { setL(false); }
@@ -185,7 +163,6 @@ function NewConvPanel({ onClose, onSelect, myId }) {
   );
 }
 
-// ── File upload helper ───────────────────────────────────────────────
 async function uploadFile(file) {
   const fd = new FormData();
   fd.append("file", file);
@@ -195,8 +172,8 @@ async function uploadFile(file) {
   return { url: d.url || d.fileUrl, name: file.name, size: file.size, type: file.type };
 }
 
-// ── Main Page ────────────────────────────────────────────────────────
-export default function MessagesPage() {
+// ── Inner content that uses useSearchParams ──────────────────────────────────
+function MessagesContent() {
   const { user }     = useAppSelector(s => s.auth);
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -225,24 +202,19 @@ export default function MessagesPage() {
   const myId = String(user?._id || user?.id || "");
   const role = user?.role || "client";
 
-  // ── Multi-endpoint user fetch for ?contact= ───────────────────────
   const fetchUserInfo = useCallback(async (id) => {
-    // 1. Universal profile endpoint
     try {
       const r = await fetch(`${API}/api/users/${id}`, { credentials: "include", headers: HJ() });
       if (r.ok) { const d = await r.json(); const u = d.user || d; if (u?._id) return u; }
     } catch {}
-    // 2. Lawyer public endpoint
     try {
       const r = await fetch(`${API}/api/lawyers/${id}`, { credentials: "include", headers: HJ() });
       if (r.ok) { const d = await r.json(); const u = d.lawyer || d; if (u?._id) return u; }
     } catch {}
-    // 3. Admin endpoint (succeeds only for admins)
     try {
       const r = await fetch(`${API}/api/admin/users/${id}`, { credentials: "include", headers: HJ() });
       if (r.ok) { const d = await r.json(); const u = d.user || d; if (u?._id) return u; }
     } catch {}
-    // 4. Dashboard allUsers fallback
     try {
       const r = await fetch(`${API}/api/dashboard`, { credentials: "include", headers: HJ() });
       if (r.ok) { const d = await r.json(); return (d.allUsers || []).find(u => u._id === id) || null; }
@@ -250,7 +222,6 @@ export default function MessagesPage() {
     return null;
   }, []);
 
-  // ── Load contacts ─────────────────────────────────────────────────
   const loadContacts = useCallback(async (silent = false) => {
     if (!silent) setLoadC(true);
     try {
@@ -260,7 +231,6 @@ export default function MessagesPage() {
     if (!silent) { setLoadC(false); setTimeout(() => setReady(true), 80); }
   }, []);
 
-  // ── Load messages ─────────────────────────────────────────────────
   const loadMsgs = useCallback(async (contactId, silent = false) => {
     if (!contactId) return;
     if (!silent) setLoadM(true);
@@ -275,7 +245,6 @@ export default function MessagesPage() {
     if (!silent) setLoadM(false);
   }, []);
 
-  // ── Send message ──────────────────────────────────────────────────
   const sendMsg = useCallback(async (attachment = null) => {
     const content = text.trim();
     if (!content && !attachment) return;
@@ -305,7 +274,6 @@ export default function MessagesPage() {
     finally { setSend(false); }
   }, [text, activeId, contactParam, myId]);
 
-  // ── File upload ───────────────────────────────────────────────────
   const handleFile = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
     e.target.value = "";
@@ -315,12 +283,10 @@ export default function MessagesPage() {
     finally { setUpload(false); }
   };
 
-  // ── Select contact ────────────────────────────────────────────────
   const selectContact = (c) => {
     setActiveId(c._id); setActiveInfo(c); setSearch(""); setShowNew(false);
   };
 
-  // ── On mount ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!user) { setTimeout(() => setReady(true), 500); return; }
     loadContacts();
@@ -328,28 +294,23 @@ export default function MessagesPage() {
     return () => clearInterval(pollRef.current);
   }, [user]);
 
-  // ── Auto-select first contact if no chat is open ──────────────────
   useEffect(() => {
     if (!contactParam && !activeId && contacts.length > 0) {
       selectContact(contacts[0]);
     }
   }, [contacts.length, contactParam, activeId]);
 
-  // ── Handle ?contact= param ────────────────────────────────────────
   useEffect(() => {
     if (!contactParam) return;
     const init = async () => {
-      // Check existing contacts first
       const found = contacts.find(c => c._id === contactParam);
       if (found) { setActiveId(contactParam); setActiveInfo(found); return; }
-      // Not in contacts — fetch info and open chat
       const info = await fetchUserInfo(contactParam);
       if (info) { setActiveId(contactParam); setActiveInfo(info); }
     };
     init();
   }, [contactParam, contacts.length]);
 
-  // ── Poll messages for active contact ─────────────────────────────
   useEffect(() => {
     if (!activeId) return;
     loadMsgs(activeId);
@@ -357,20 +318,15 @@ export default function MessagesPage() {
     return () => clearInterval(t);
   }, [activeId]);
 
-  // ── Scroll to bottom ──────────────────────────────────────────────
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  // ── Ready state ───────────────────────────────────────────────────
   useEffect(() => { if (!loadC) setTimeout(() => setReady(true), 80); }, [loadC]);
 
-  // ── Helpers ───────────────────────────────────────────────────────
   const filteredContacts = contacts.filter(c => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (c.name || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q);
   });
 
-  // Group messages by day
   const grouped = messages.reduce((acc, msg) => {
     const day = fmtDay(msg.createdAt || Date.now());
     if (!acc[day]) acc[day] = [];
@@ -381,48 +337,25 @@ export default function MessagesPage() {
   const activeName = activeInfo?.name || activeInfo?.email || "Chat";
   const activeDot  = ROLE_C[activeInfo?.role] || "#6366f1";
   const showChat   = !!(activeId);
-
-  // ── Pending new contact — show in sidebar ─────────────────────────
   const pendingInSidebar = contactParam && activeInfo && !contacts.find(c => c._id === contactParam);
 
   return (
     <>
       <style>{`
-        :root{
-          --sk:#e2e8f0;--chat-bg:#f8fafc;--sidebar-bg:#ffffff;--header-bg:#ffffff;
-          --input-bg:#f8fafc;--input-border:#e2e8f0;--conv-hover:#f1f5f9;
-          --border-color:#e2e8f0;--bubble-other-bg:#ffffff;--bubble-other-color:#0f172a;
-          --day-bg:#f8fafc;--text-heading:#0f172a;--text-muted:#64748b;--text-primary:#374151;
-        }
-        .dark{
-          --sk:#1e293b;--chat-bg:#0a0f1a;--sidebar-bg:#0f172a;--header-bg:#0f172a;
-          --input-bg:#1e293b;--input-border:#334155;--conv-hover:#1a2234;
-          --border-color:#334155;--bubble-other-bg:#1e293b;--bubble-other-color:#f1f5f9;
-          --day-bg:#1e293b;--text-heading:#f1f5f9;--text-muted:#94a3b8;--text-primary:#e2e8f0;
-        }
+        :root{--sk:#e2e8f0;--chat-bg:#f8fafc;--sidebar-bg:#ffffff;--header-bg:#ffffff;--input-bg:#f8fafc;--input-border:#e2e8f0;--conv-hover:#f1f5f9;--border-color:#e2e8f0;--bubble-other-bg:#ffffff;--bubble-other-color:#0f172a;--day-bg:#f8fafc;--text-heading:#0f172a;--text-muted:#64748b;--text-primary:#374151;}
+        .dark{--sk:#1e293b;--chat-bg:#0a0f1a;--sidebar-bg:#0f172a;--header-bg:#0f172a;--input-bg:#1e293b;--input-border:#334155;--conv-hover:#1a2234;--border-color:#334155;--bubble-other-bg:#1e293b;--bubble-other-color:#f1f5f9;--day-bg:#1e293b;--text-heading:#f1f5f9;--text-muted:#94a3b8;--text-primary:#e2e8f0;}
         @keyframes sk{0%,100%{opacity:1}50%{opacity:.4}}
         @keyframes fd{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes pop{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
         @keyframes scIn{from{transform:scale(0.95) translateY(14px);opacity:0}to{transform:scale(1);opacity:1}}
         @keyframes slideIn{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
-        .msg-b{animation:fd 0.18s ease;}
-        .conv-row{transition:background 0.12s;cursor:pointer;}
-        .conv-row:hover{background:var(--conv-hover)!important;}
-        .conv-row.active-c{background:var(--conv-hover)!important;border-left:3px solid #3b82f6!important;}
-        .msg-inp:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,0.1)!important;}
-        .send-btn:not(:disabled):hover{opacity:.85;}
-        .send-btn:disabled{opacity:.45;cursor:not-allowed;}
-        .icon-btn:hover{opacity:.75;transform:scale(1.08);}
-        .icon-btn{transition:all .15s;}
-        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
+        .msg-b{animation:fd 0.18s ease;}.conv-row{transition:background 0.12s;cursor:pointer;}.conv-row:hover{background:var(--conv-hover)!important;}.conv-row.active-c{background:var(--conv-hover)!important;border-left:3px solid #3b82f6!important;}.msg-inp:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,0.1)!important;}.send-btn:not(:disabled):hover{opacity:.85;}.send-btn:disabled{opacity:.45;cursor:not-allowed;}.icon-btn:hover{opacity:.75;transform:scale(1.08);}.icon-btn{transition:all .15s;}::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
       `}</style>
 
       <div style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 20, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.07)", opacity: ready ? 1 : 0, transition: "opacity 0.4s" }}>
-
-        {/* ════════════════════ SIDEBAR ════════════════════ */}
+        {/* SIDEBAR */}
         <div style={{ width: 300, display: "flex", flexDirection: "column", background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)", flexShrink: 0 }}>
-          {/* Header */}
           <div style={{ padding: "18px 14px 12px", borderBottom: "1px solid var(--border-color)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "var(--text-heading)" }}>Messages</h2>
@@ -437,8 +370,6 @@ export default function MessagesPage() {
                 style={{ width: "100%", padding: "8px 10px 8px 28px", borderRadius: 10, border: "1px solid var(--input-border)", fontSize: 13, outline: "none", background: "var(--input-bg)", color: "var(--text-primary)", boxSizing: "border-box" }} />
             </div>
           </div>
-
-          {/* Contact list */}
           <div style={{ flex: 1, overflowY: "auto" }}>
             {loadC ? (
               <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -453,7 +384,6 @@ export default function MessagesPage() {
               </div>
             ) : (
               <>
-                {/* Pending contact (from ?contact= param, not yet in conversations) */}
                 {pendingInSidebar && (
                   <div className={`conv-row${activeId === contactParam ? " active-c" : ""}`}
                     onClick={() => selectContact(activeInfo)}
@@ -466,7 +396,6 @@ export default function MessagesPage() {
                     <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: `${ROLE_C[activeInfo.role] || "#6366f1"}18`, color: ROLE_C[activeInfo.role] || "#6366f1" }}>{activeInfo.role || "user"}</span>
                   </div>
                 )}
-
                 {filteredContacts.length === 0 && !pendingInSidebar ? (
                   <div style={{ padding: "36px 14px", textAlign: "center", color: "var(--text-muted)" }}>
                     <div style={{ fontSize: 40, marginBottom: 10 }}>💬</div>
@@ -505,10 +434,9 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        {/* ════════════════════ CHAT AREA ════════════════════ */}
+        {/* CHAT AREA */}
         {showChat ? (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "var(--chat-bg)", minWidth: 0 }}>
-            {/* Chat header */}
             <div style={{ padding: "12px 20px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
               <div onClick={() => setProfileU(activeInfo)} style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}>
                 <Avatar user={activeInfo} size={42} />
@@ -521,22 +449,17 @@ export default function MessagesPage() {
                 </p>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button className="icon-btn"
-                  onClick={() => router.push(`/dashboard/${role}/video-calls?contact=${activeId}`)}
-                  title="Video Call"
+                <button className="icon-btn" onClick={() => router.push(`/dashboard/${role}/video-calls?contact=${activeId}`)} title="Video Call"
                   style={{ width: 36, height: 36, borderRadius: 10, background: "#f0fdf4", border: "1px solid #86efac", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Video size={16} style={{ color: "#10b981" }} />
                 </button>
-                <button className="icon-btn"
-                  onClick={() => setProfileU(activeInfo)}
-                  title="View Profile"
+                <button className="icon-btn" onClick={() => setProfileU(activeInfo)} title="View Profile"
                   style={{ width: 36, height: 36, borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border-color)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <User size={16} style={{ color: "var(--text-muted)" }} />
                 </button>
               </div>
             </div>
 
-            {/* Messages */}
             <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 2 }}>
               {loadM ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -554,7 +477,6 @@ export default function MessagesPage() {
                 </div>
               ) : Object.entries(grouped).map(([day, dayMsgs]) => (
                 <div key={day}>
-                  {/* Day separator */}
                   <div style={{ textAlign: "center", margin: "14px 0 10px", position: "relative" }}>
                     <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: 1, background: "var(--border-color)" }} />
                     <span style={{ background: "var(--chat-bg)", padding: "3px 14px", borderRadius: 20, fontSize: 11, color: "var(--text-muted)", fontWeight: 600, position: "relative", zIndex: 1 }}>{day}</span>
@@ -571,33 +493,21 @@ export default function MessagesPage() {
                           </div>
                         )}
                         <div style={{ maxWidth: "68%" }}>
-                          <div style={{
-                            padding: isImg ? 4 : "10px 14px",
-                            borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                            background: mine ? "#3b82f6" : "var(--bubble-other-bg)",
-                            color: mine ? "#fff" : "var(--bubble-other-color)",
-                            border: mine ? "none" : "1px solid var(--border-color)",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                            opacity: msg.pending ? 0.6 : 1,
-                            transition: "opacity 0.2s",
-                          }}>
+                          <div style={{ padding: isImg ? 4 : "10px 14px", borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", background: mine ? "#3b82f6" : "var(--bubble-other-bg)", color: mine ? "#fff" : "var(--bubble-other-color)", border: mine ? "none" : "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", opacity: msg.pending ? 0.6 : 1, transition: "opacity 0.2s" }}>
                             {msg.content && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>{msg.content}</p>}
-                            {msg.fileUrl && (
-                              isImg ? (
-                                <a href={msg.fileUrl} target="_blank" rel="noreferrer">
-                                  <img src={msg.fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: 220, maxHeight: 200, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0 }} />
-                                </a>
-                              ) : (
-                                <a href={msg.fileUrl} target="_blank" rel="noreferrer"
-                                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
-                                  <Paperclip size={16} />
-                                  <div style={{ minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>{msg.fileName || "File"}</p>
-                                    <p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p>
-                                  </div>
-                                </a>
-                              )
-                            )}
+                            {msg.fileUrl && (isImg ? (
+                              <a href={msg.fileUrl} target="_blank" rel="noreferrer">
+                                <img src={msg.fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: 220, maxHeight: 200, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0 }} />
+                              </a>
+                            ) : (
+                              <a href={msg.fileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
+                                <Paperclip size={16} />
+                                <div style={{ minWidth: 0 }}>
+                                  <p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>{msg.fileName || "File"}</p>
+                                  <p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p>
+                                </div>
+                              </a>
+                            ))}
                           </div>
                           <p style={{ margin: "2px 4px 0", fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left" }}>
                             {msg.pending ? "Sending…" : fmt(msg.createdAt || Date.now())}
@@ -612,30 +522,22 @@ export default function MessagesPage() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Emoji picker */}
             {showEmoji && (
               <div style={{ padding: "10px 16px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {EMOJIS.map(e => (
-                  <button key={e}
-                    onClick={() => { setText(p => p + e); setEmoji(false); inputRef.current?.focus(); }}
+                  <button key={e} onClick={() => { setText(p => p + e); setEmoji(false); inputRef.current?.focus(); }}
                     style={{ width: 36, height: 36, borderRadius: 8, border: "none", background: "transparent", fontSize: 18, cursor: "pointer", transition: "transform 0.1s" }}
                     onMouseEnter={el => el.currentTarget.style.transform = "scale(1.2)"}
-                    onMouseLeave={el => el.currentTarget.style.transform = "scale(1)"}>
-                    {e}
-                  </button>
+                    onMouseLeave={el => el.currentTarget.style.transform = "scale(1)"}>{e}</button>
                 ))}
               </div>
             )}
 
-            {/* Input bar */}
             <div style={{ padding: "10px 14px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", gap: 8, alignItems: "flex-end", flexShrink: 0 }}>
-              <input ref={fileRef} type="file" onChange={handleFile} style={{ display: "none" }}
-                accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt" />
+              <input ref={fileRef} type="file" onChange={handleFile} style={{ display: "none" }} accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt" />
               <button className="icon-btn" disabled={uploading} onClick={() => fileRef.current?.click()} title="Attach file"
                 style={{ width: 36, height: 36, borderRadius: 10, background: "var(--input-bg)", border: "1px solid var(--border-color)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {uploading
-                  ? <div style={{ width: 14, height: 14, border: "2px solid #94a3b8", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  : <Paperclip size={15} style={{ color: "var(--text-muted)" }} />}
+                {uploading ? <div style={{ width: 14, height: 14, border: "2px solid #94a3b8", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Paperclip size={15} style={{ color: "var(--text-muted)" }} />}
               </button>
               <button className="icon-btn" onClick={() => setEmoji(p => !p)} title="Emoji"
                 style={{ width: 36, height: 36, borderRadius: 10, background: showEmoji ? "#eff6ff" : "var(--input-bg)", border: `1px solid ${showEmoji ? "#3b82f6" : "var(--border-color)"}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -644,58 +546,40 @@ export default function MessagesPage() {
               <textarea ref={inputRef} value={text} onChange={e => setText(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMsg(); } }}
                 placeholder={`Message ${activeName}… (Enter to send, Shift+Enter for new line)`}
-                rows={1}
-                className="msg-inp"
+                rows={1} className="msg-inp"
                 style={{ flex: 1, padding: "9px 13px", borderRadius: 12, border: "1px solid var(--input-border)", fontSize: 14, outline: "none", resize: "none", lineHeight: 1.5, maxHeight: 100, overflowY: "auto", background: "var(--input-bg)", color: "var(--text-primary)", transition: "border-color 0.15s, box-shadow 0.15s", fontFamily: "inherit" }} />
               <button onClick={() => sendMsg()} disabled={(!text.trim() && !uploading) || sending} className="send-btn"
                 style={{ height: 36, padding: "0 16px", borderRadius: 12, background: text.trim() ? "#3b82f6" : "var(--input-bg)", color: text.trim() ? "#fff" : "var(--text-muted)", border: text.trim() ? "none" : "1px solid var(--border-color)", fontWeight: 700, fontSize: 14, cursor: "pointer", transition: "all 0.15s", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                {sending
-                  ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.5)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  : <><Send size={15} /><span style={{ fontSize: 13 }}>Send</span></>}
+                {sending ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.5)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <><Send size={15} /><span style={{ fontSize: 13 }}>Send</span></>}
               </button>
             </div>
           </div>
         ) : (
-          /* No contact open yet — prompt to start */
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--chat-bg)", flexDirection: "column", gap: 16 }}>
-            <div style={{ width: 96, height: 96, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 40px rgba(59,130,246,0.3)", animation: "pop 0.4s ease", fontSize: 44 }}>
-              💬
-            </div>
+            <div style={{ width: 96, height: 96, borderRadius: "50%", background: "linear-gradient(135deg,#3b82f6,#06b6d4)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 40px rgba(59,130,246,0.3)", animation: "pop 0.4s ease", fontSize: 44 }}>💬</div>
             <div style={{ textAlign: "center" }}>
               <p style={{ color: "var(--text-heading)", fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>Your messages</p>
-              <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
-                {contacts.length > 0 ? "Select a conversation from the sidebar" : "Start your first conversation"}
-              </p>
+              <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>{contacts.length > 0 ? "Select a conversation from the sidebar" : "Start your first conversation"}</p>
             </div>
-            <button onClick={() => setShowNew(true)}
-              style={{ marginTop: 4, padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg,#3b82f6,#06b6d4)", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 16px rgba(59,130,246,0.35)" }}>
+            <button onClick={() => setShowNew(true)} style={{ marginTop: 4, padding: "12px 28px", borderRadius: 14, background: "linear-gradient(135deg,#3b82f6,#06b6d4)", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 16px rgba(59,130,246,0.35)" }}>
               <Plus size={16} />New Conversation
             </button>
-            {contacts.length > 0 && (
-              <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>{contacts.length} conversation{contacts.length !== 1 ? "s" : ""} in your inbox</p>
-            )}
+            {contacts.length > 0 && <p style={{ color: "var(--text-muted)", fontSize: 12, margin: 0 }}>{contacts.length} conversation{contacts.length !== 1 ? "s" : ""} in your inbox</p>}
           </div>
         )}
       </div>
 
-      {/* Profile Modal */}
-      {profileUser && (
-        <ProfileModal
-          user={profileUser}
-          onClose={() => setProfileU(null)}
-          onMessage={() => { setProfileU(null); inputRef.current?.focus(); }}
-          onCall={() => { setProfileU(null); router.push(`/dashboard/${role}/video-calls?contact=${profileUser._id}`); }}
-        />
-      )}
-
-      {/* New Conversation Slide-in Panel */}
-      {showNewConv && (
-        <NewConvPanel
-          myId={myId}
-          onClose={() => setShowNew(false)}
-          onSelect={(u) => { selectContact(u); setActiveId(u._id); setActiveInfo(u); }}
-        />
-      )}
+      {profileUser && <ProfileModal user={profileUser} onClose={() => setProfileU(null)} onMessage={() => { setProfileU(null); inputRef.current?.focus(); }} onCall={() => { setProfileU(null); router.push(`/dashboard/${role}/video-calls?contact=${profileUser._id}`); }} />}
+      {showNewConv && <NewConvPanel myId={myId} onClose={() => setShowNew(false)} onSelect={(u) => { selectContact(u); setActiveId(u._id); setActiveInfo(u); }} />}
     </>
+  );
+}
+
+// ── Default Export wrapped in Suspense ────────────────────────────────────────
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div style={{ height: "calc(100vh - 112px)", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+      <MessagesContent />
+    </Suspense>
   );
 }

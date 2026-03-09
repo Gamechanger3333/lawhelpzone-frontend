@@ -1,9 +1,6 @@
 "use client";
-// ══════════════════════════════════════════════════════════════
 // VIDEO CALLS PAGE — admin / lawyer / client
-// Place at: app/dashboard/[role]/video-calls/page.jsx
-// ══════════════════════════════════════════════════════════════
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAppSelector } from "../../../../store/index";
 
@@ -13,7 +10,8 @@ const H = () => ({ ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
 const HJ = () => ({ "Content-Type": "application/json", ...H() });
 const genRoom = () => `lhz-${Math.random().toString(36).slice(2, 8)}-${Date.now().toString(36)}`;
 
-export default function VideoCallsPage() {
+// ── Inner content that uses useSearchParams ───────────────────────────────────
+function VideoCallsContent() {
   const { user } = useAppSelector(s => s.auth);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -97,7 +95,6 @@ export default function VideoCallsPage() {
     inviteUser(contactInfo, activeRoom);
   }, [activeRoom, contactInfo]);
 
-  // ✅ FIXED: clean Jitsi URL — no quoted displayName, no deprecated interfaceConfig
   const jitsiUrl = activeRoom
     ? `https://meet.jit.si/${activeRoom}#` + [
         "config.startWithAudioMuted=false",
@@ -236,20 +233,10 @@ export default function VideoCallsPage() {
             )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 14, height: "calc(100vh - 230px)" }}>
-              {/*
-                ✅ KEY FIX: camera * and microphone * (with asterisk) grants camera/mic
-                   permission to the cross-origin Jitsi iframe. Without the *, browsers
-                   block camera/mic access inside iframes from different origins.
-                   allowFullScreen is also required for fullscreen to work.
-              */}
               <div style={{ borderRadius: 20, overflow: "hidden", border: "1px solid #e2e8f0", boxShadow: "0 4px 24px rgba(0,0,0,0.08)" }}>
-                <iframe
-                  src={jitsiUrl}
-                  style={{ width: "100%", height: "100%", border: "none" }}
+                <iframe src={jitsiUrl} style={{ width: "100%", height: "100%", border: "none" }}
                   allow="camera *; microphone *; fullscreen *; display-capture *; autoplay *; clipboard-read; clipboard-write"
-                  allowFullScreen
-                  title="Video Call"
-                />
+                  allowFullScreen title="Video Call" />
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 12, overflowY: "auto" }}>
@@ -289,5 +276,14 @@ export default function VideoCallsPage() {
         )}
       </div>
     </>
+  );
+}
+
+// ── Default Export wrapped in Suspense ────────────────────────────────────────
+export default function VideoCallsPage() {
+  return (
+    <Suspense fallback={<div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>Loading…</div>}>
+      <VideoCallsContent />
+    </Suspense>
   );
 }
