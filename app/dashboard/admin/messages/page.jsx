@@ -31,10 +31,15 @@ const H   = () => ({ ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
 const HJ  = () => ({ "Content-Type": "application/json", ...H() });
 
 const fixUrl = (url) => {
-  if (!url) return null;
+  if (!url || typeof url !== "string") return null;
+  // If it's already an absolute URL, fix localhost references
   if (url.startsWith("http://localhost:5000") || url.startsWith("http://localhost:3000"))
     return url.replace(/http:\/\/localhost:\d+/, API);
-  return url;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  // Relative path like "/uploads/file.jpg" — prepend API base
+  if (url.startsWith("/uploads/")) return `${API}${url}`;
+  // Anything else (plain filename, null string, etc.) — not a valid URL
+  return null;
 };
 
 const ROLE_C = { admin: "#ef4444", lawyer: "#10b981", client: "#3b82f6" };
@@ -240,13 +245,14 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
       background: BG, borderRadius: 18,
       boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.08)",
       border: `1px solid ${BORDER}`, width: menuW,
-      overflow: "hidden", animation: "popIn 0.15s ease",
+      overflow: showAllEmoji ? "visible" : "hidden",
+      animation: "popIn 0.15s ease",
       transition: "width 0.2s ease"
     }}>
 
       {showAllEmoji ? (
         /* ── Full Emoji Picker Panel ── */
-        <div style={{ display: "flex", flexDirection: "column", height: menuH }}>
+        <div style={{ display: "flex", flexDirection: "column", height: menuH, borderRadius: 18, overflow: "hidden", background: BG, border: `1px solid ${BORDER}`, boxShadow: "0 16px 56px rgba(0,0,0,0.22)" }}>
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 8px", borderBottom: `1px solid ${BORDER}` }}>
             <button onClick={() => { setShowAllEmoji(false); setEmojiSearch(""); }}
@@ -762,8 +768,10 @@ function MessagesContent() {
                     </div>
                     {dayMsgs.map((msg, i) => {
                       const mine      = String(msg.senderId?._id || msg.senderId) === myId;
-                      const fileUrl   = fixUrl(msg.fileUrl);
-                      const isImg     = msg.type === "image";
+                      const rawFileUrl = fixUrl(msg.fileUrl);
+                      // Only treat as real file if it's an absolute URL — prevents showing "Attachment" on bad data
+                      const fileUrl   = rawFileUrl && (rawFileUrl.startsWith("http://") || rawFileUrl.startsWith("https://")) ? rawFileUrl : null;
+                      const isImg     = msg.type === "image" && !!fileUrl;
                       const reactions = msg.reactions || {};
                       const hasR      = Object.keys(reactions).length > 0;
                       const isStarred = starredMsgs.has(msg._id);
