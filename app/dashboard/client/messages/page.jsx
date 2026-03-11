@@ -676,7 +676,16 @@ function MessagesContent() {
                           </div>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <p style={{ margin: 0, fontSize: 12, color: c.unread > 0 ? "var(--text-heading)" : "var(--text-muted)", fontWeight: c.unread > 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
-                              {isAct && isTyping ? <span style={{ color: "#10b981", fontStyle: "italic" }}>typing…</span> : (c.lastMessage || "Start chatting…")}
+                              {isAct && isTyping
+                                ? <span style={{ color: "#10b981", fontStyle: "italic" }}>typing…</span>
+                                : (() => {
+                                    const lm = c.lastMessage || "";
+                                    if (!lm || lm === "📎 File") return "📎 File";
+                                    if (lm === "📷 Image") return "📷 Image";
+                                    if (lm === "🚫 Message deleted") return "🚫 Message deleted";
+                                    return lm || "Start chatting…";
+                                  })()
+                              }
                             </p>
                             {c.unread > 0 && <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: "#3b82f6", color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 4, padding: "0 4px" }}>{c.unread}</span>}
                           </div>
@@ -923,58 +932,42 @@ function NewConvPanel({ myId, onClose, onSelect, isMobile }) {
   useEffect(() => {
     (async () => {
       setL(true);
+      const merged = new Map();
+      const add = (arr) => {
+        if (!Array.isArray(arr)) return;
+        arr.forEach(u => { if (u?._id) merged.set(u._id.toString(), u); });
+      };
+
+      // ✅ PRIMARY: dedicated /api/messages/users — returns ALL users for any role
       try {
-        // Fetch from all endpoints in parallel and merge — works for every role
-        const results = await Promise.allSettled([
-          // Dashboard: lawyer gets allUsers, client gets allLawyers, admin gets lawyers
-          fetch(`${API}/api/dashboard`, { credentials: "include", headers: HJ() })
-            .then(r => r.ok ? r.json() : null),
-          // Admin endpoint — returns all users (works if current user is admin)
-          fetch(`${API}/api/admin/users?limit=500`, { credentials: "include", headers: HJ() })
-            .then(r => r.ok ? r.json() : null),
-          // Lawyers endpoint — public, always works
-          fetch(`${API}/api/lawyers?limit=200`, { credentials: "include", headers: HJ() })
-            .then(r => r.ok ? r.json() : null),
-        ]);
+        const r = await fetch(`${API}/api/messages/users?limit=500`, { credentials: "include", headers: HJ() });
+        if (r.ok) { const d = await r.json(); add(d.users); }
+      } catch {}
 
-        const merged = new Map();
-
-        const add = (arr) => {
-          if (!Array.isArray(arr)) return;
-          arr.forEach(u => { if (u?._id) merged.set(u._id.toString(), u); });
-        };
-
-        // Dashboard response — pick whichever user list it returned
-        if (results[0].status === "fulfilled" && results[0].value) {
-          const d = results[0].value;
-          add(d.allUsers);     // lawyer dashboard
-          add(d.allLawyers);   // client dashboard
-          add(d.lawyers);      // admin dashboard
-          add(d.recentUsers);  // admin dashboard fallback
-          add(d.myClients);    // lawyer dashboard clients
-          add(d.myLawyers);    // client dashboard my lawyers
+      // Fallback 1: Dashboard (role-specific but collects extra data)
+      try {
+        const r = await fetch(`${API}/api/dashboard`, { credentials: "include", headers: HJ() });
+        if (r.ok) {
+          const d = await r.json();
+          add(d.allUsers); add(d.allLawyers); add(d.lawyers);
+          add(d.recentUsers); add(d.myClients); add(d.myLawyers);
         }
+      } catch {}
 
-        // Admin users endpoint
-        if (results[1].status === "fulfilled" && results[1].value) {
-          const d = results[1].value;
-          add(d.users);
-          add(d.data);
-        }
+      // Fallback 2: Admin users list
+      try {
+        const r = await fetch(`${API}/api/admin/users?limit=500`, { credentials: "include", headers: HJ() });
+        if (r.ok) { const d = await r.json(); add(d.users); add(d.data); }
+      } catch {}
 
-        // Lawyers endpoint
-        if (results[2].status === "fulfilled" && results[2].value) {
-          const d = results[2].value;
-          add(d.lawyers);
-          add(d.data);
-        }
+      // Fallback 3: Lawyers public endpoint
+      try {
+        const r = await fetch(`${API}/api/lawyers?limit=200`, { credentials: "include", headers: HJ() });
+        if (r.ok) { const d = await r.json(); add(d.lawyers); }
+      } catch {}
 
-        setUsers([...merged.values()]);
-      } catch (err) {
-        console.error("NewConvPanel fetch error:", err);
-      } finally {
-        setL(false);
-      }
+      setUsers([...merged.values()]);
+      setL(false);
     })();
   }, []);
 
