@@ -291,7 +291,7 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
           <div style={{ flex: 1, overflowY: "auto", padding: "6px 8px", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
             {displayEmojis.map((e, i) => (
               <button key={`${e}-${i}`}
-                onClick={() => { onReact(e); onClose(); }}
+                onClick={(ev) => { ev.stopPropagation(); onReact(e); onClose(); }}
                 style={{ width: "100%", aspectRatio: "1", border: "none", background: "transparent", fontSize: 20, cursor: "pointer", borderRadius: 8, transition: "background 0.1s, transform 0.1s", display: "flex", alignItems: "center", justifyContent: "center" }}
                 onMouseEnter={ev => { ev.currentTarget.style.background = HOVER; ev.currentTarget.style.transform = "scale(1.3)"; }}
                 onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.transform = "scale(1)"; }}>
@@ -307,7 +307,7 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
           <div style={{ display: "flex", alignItems: "center", padding: "10px 8px 8px", borderBottom: `1px solid ${BORDER}`, gap: 2 }}>
             <div style={{ display: "flex", overflowX: "auto", flex: 1, gap: 1, scrollbarWidth: "none" }}>
               {QUICK_REACTIONS.map(r => (
-                <button key={r} onClick={() => { onReact(r); onClose(); }}
+                <button key={r} onClick={(ev) => { ev.stopPropagation(); onReact(r); onClose(); }}
                   style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, border: "none", background: "transparent", fontSize: 20, cursor: "pointer", transition: "transform 0.12s, background 0.12s", display: "flex", alignItems: "center", justifyContent: "center" }}
                   onMouseEnter={ev => { ev.currentTarget.style.transform = "scale(1.4)"; ev.currentTarget.style.background = HOVER; }}
                   onMouseLeave={ev => { ev.currentTarget.style.transform = "scale(1)"; ev.currentTarget.style.background = "transparent"; }}>
@@ -786,7 +786,7 @@ function MessagesContent() {
                           {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: hasR ? 20 : 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
 
                           <div style={{ maxWidth: isMobile ? "83%" : "65%", position: "relative" }}>
-                            {msg.replyTo && (
+                            {msg.replyTo?._id && (
                               <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
                                 <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || "Attachment"}</p>
                               </div>
