@@ -436,6 +436,7 @@ function MessagesContent() {
   const mediaRecRef   = useRef(null);
   const recChunksRef  = useRef([]);
   const recTimerRef   = useRef(null);
+  const sendMsgWithAttachmentRef = useRef(null); // always-fresh ref for voice note upload
 
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
@@ -461,7 +462,8 @@ function MessagesContent() {
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mr = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm" });
+      const mimeType = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       recChunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) recChunksRef.current.push(e.data); };
       mr.start(100);
@@ -489,6 +491,7 @@ function MessagesContent() {
     }
     mr.onstop = async () => {
       const blob    = new Blob(recChunksRef.current, { type: mr.mimeType || "audio/webm" });
+      const ext     = (mr.mimeType || "audio/webm").includes("mp4") ? "mp4" : "webm";
       const durSec  = recSeconds;
       mr.stream?.getTracks().forEach(t => t.stop());
       mediaRecRef.current = null;
@@ -496,11 +499,11 @@ function MessagesContent() {
       setRecSeconds(0);
       recChunksRef.current = [];
       // Upload as file
-      const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: blob.type });
+      const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: blob.type });
       setUpload(true);
       try {
         const att = await uploadFile(file);
-        await sendMsgWithAttachment({ ...att, voiceDuration: durSec, type: "audio" });
+        await sendMsgWithAttachmentRef.current?.({ ...att, voiceDuration: durSec, type: "audio" });
       } catch { alert("Voice note upload failed."); }
       finally { setUpload(false); }
     };
@@ -631,6 +634,7 @@ function MessagesContent() {
       setMsgs(p => p.filter(m => m._id !== opt._id)); setText(content);
     } finally { setSend(false); }
   }, [text, activeId, contactParam, myId, replyTo, autoResize]);
+  sendMsgWithAttachmentRef.current = sendMsgWithAttachment; // keep ref fresh
 
   const sendMsg = useCallback(async (attachment = null) => {
     if (editingMsg) { submitEdit(); return; }
