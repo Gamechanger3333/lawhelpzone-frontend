@@ -244,15 +244,18 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
       position: "fixed", left: safeX, top: safeY, zIndex: 9999,
       background: BG, borderRadius: 18,
       boxShadow: "0 16px 56px rgba(0,0,0,0.22), 0 2px 8px rgba(0,0,0,0.08)",
-      border: `1px solid ${BORDER}`, width: menuW,
-      overflow: showAllEmoji ? "visible" : "hidden",
+      border: `1px solid ${BORDER}`,
+      width: menuW,
+      height: showAllEmoji ? menuH : "auto",
+      overflow: "hidden",
+      display: "flex", flexDirection: "column",
       animation: "popIn 0.15s ease",
-      transition: "width 0.2s ease"
+      transition: "width 0.2s ease, height 0.2s ease"
     }}>
 
       {showAllEmoji ? (
         /* ── Full Emoji Picker Panel ── */
-        <div style={{ display: "flex", flexDirection: "column", height: menuH, borderRadius: 18, overflow: "hidden", background: BG, border: `1px solid ${BORDER}`, boxShadow: "0 16px 56px rgba(0,0,0,0.22)" }}>
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           {/* Header */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 8px", borderBottom: `1px solid ${BORDER}` }}>
             <button onClick={() => { setShowAllEmoji(false); setEmojiSearch(""); }}
@@ -771,7 +774,9 @@ function MessagesContent() {
                       const rawFileUrl = fixUrl(msg.fileUrl);
                       // Only treat as real file if it's an absolute URL — prevents showing "Attachment" on bad data
                       const fileUrl   = rawFileUrl && (rawFileUrl.startsWith("http://") || rawFileUrl.startsWith("https://")) ? rawFileUrl : null;
-                      const isImg     = msg.type === "image" && !!fileUrl;
+                      // If fileUrl is invalid/missing, treat the message as plain text regardless of stored type
+                      const msgType   = fileUrl ? (msg.type || "text") : "text";
+                      const isImg     = msgType === "image" && !!fileUrl;
                       const reactions = msg.reactions || {};
                       const hasR      = Object.keys(reactions).length > 0;
                       const isStarred = starredMsgs.has(msg._id);
