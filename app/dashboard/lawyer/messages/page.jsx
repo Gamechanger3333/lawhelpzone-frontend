@@ -22,7 +22,7 @@ import { useAppSelector } from "../../../../store/index";
 import {
   Video, X, Send, Paperclip, Smile, Search, Plus,
   ChevronLeft, Edit2, Trash2, Reply, MoreVertical,
-  Check, CheckCheck, Download, Star, Copy, AlertCircle, User, Pin
+  Check, CheckCheck, Download, Star, Copy, AlertCircle, User
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -185,24 +185,24 @@ function EmojiPicker({ onSelect, onClose }) {
   );
 }
 
-// ── Pin Duration Modal ──────────────────────────────────────────────────────
+// ── Pin Duration Modal ────────────────────────────────────────────────────────
 function PinDurationModal({ onPin, onClose }) {
   const [duration, setDuration] = useState("7days");
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 3000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ background: "var(--sidebar-bg,#1c1c1c)", borderRadius: 18, width: "100%", maxWidth: 420, boxShadow: "0 24px 64px rgba(0,0,0,0.4)", animation: "scIn 0.25s ease", border: "1px solid var(--border-color,#333)" }}>
+      <div style={{ background: "#fff", borderRadius: 18, width: "100%", maxWidth: 400, boxShadow: "0 24px 64px rgba(0,0,0,0.2)" }}>
         <div style={{ padding: "24px 24px 8px" }}>
-          <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "var(--text-heading,#fff)" }}>Choose how long your pin lasts</h3>
-          <p style={{ margin: "0 0 20px", fontSize: 13, color: "var(--text-muted,#94a3b8)" }}>You can unpin at any time.</p>
+          <h3 style={{ margin: "0 0 4px", fontSize: 17, fontWeight: 800, color: "#0f172a" }}>Choose how long your pin lasts</h3>
+          <p style={{ margin: "0 0 16px", fontSize: 13, color: "#64748b" }}>You can unpin at any time.</p>
           {[["24hours","24 hours"],["7days","7 days"],["30days","30 days"]].map(([val, label]) => (
-            <label key={val} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", cursor: "pointer", borderBottom: "1px solid var(--border-color,#2a2a2a)" }}>
-              <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${duration === val ? "#25d366" : "var(--text-muted,#555)"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "border-color 0.15s" }}
-                onClick={() => setDuration(val)}>
+            <div key={val} onClick={() => setDuration(val)}
+              style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", cursor: "pointer", borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ width: 22, height: 22, borderRadius: "50%", border: `2px solid ${duration === val ? "#25d366" : "#cbd5e1"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 {duration === val && <div style={{ width: 12, height: 12, borderRadius: "50%", background: "#25d366" }} />}
               </div>
-              <span style={{ fontSize: 15, color: "var(--text-heading,#fff)", fontWeight: duration === val ? 700 : 400 }}>{label}</span>
-            </label>
+              <span style={{ fontSize: 15, color: "#0f172a", fontWeight: duration === val ? 700 : 400 }}>{label}</span>
+            </div>
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "16px 24px" }}>
@@ -356,7 +356,7 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
           {item(<Reply size={15} />,  "Reply",         onReply,               TXT)}
           {item(<Copy  size={15} />,  "Copy",          onCopy,                TXT)}
           {item(<Star  size={15} />,  "Star message",  onStar,                TXT)}
-          {item(<Pin   size={15} />,  msg.pinned ? "Unpin message" : "Pin message", onPin, TXT)}
+          {item(<span style={{ fontSize: 14 }}>📌</span>, msg.pinned ? "Unpin message" : "Pin message", onPin, TXT)}
           {isMine && item(<Edit2 size={15} />, editExpired ? "Edit (expired — 15 min)" : "Edit", onEdit, editExpired ? MUTED : TXT, editExpired)}
           <div style={{ height: 1, background: BORDER, margin: "4px 0" }} />
           {item(<Trash2 size={15} />, "Delete for me",       () => onDelete("me"),       RED)}
@@ -408,8 +408,9 @@ function MessagesContent() {
   const [starredMsgs, setStarred]    = useState(new Set());
   const [deletedMsgs, setDeleted]    = useState(new Set());
   const [profileUser, setProfileU]   = useState(null);
-  const [pinnedMsg,   setPinnedMsg]  = useState(null);       // { msg, duration }
-  const [showPinModal, setShowPin]   = useState(null);       // msg to pin
+  // ── NEW: pin state ──────────────────────────────────────────────────────────
+  const [pinnedMsg,   setPinnedMsg]  = useState(null);   // { msg, duration }
+  const [pinTarget,   setPinTarget]  = useState(null);   // msg waiting for duration pick
 
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
@@ -540,14 +541,6 @@ function MessagesContent() {
         setMsgs(p => p.map(m => m._id === opt._id ? (d.message || d) : m));
         if (!activeId && contactParam) setActiveId(contactParam);
         loadContacts(true);
-
-        // ✅ Email notification — fire & forget (backend handles this)
-        // Backend should call sendEmailNotification() inside POST /api/messages
-        // If you need frontend to trigger separately, uncomment below:
-        // fetch(`${API}/api/messages/notify-email`, {
-        //   method: "POST", credentials: "include", headers: HJ(),
-        //   body: JSON.stringify({ receiverId, senderName: user?.name || "Someone", preview: content?.slice(0,100) })
-        // }).catch(() => {});
       } else {
         setMsgs(p => p.filter(m => m._id !== opt._id)); setText(content);
       }
@@ -769,23 +762,18 @@ function MessagesContent() {
                 </button>
               </div>
 
-              {/* Pinned message bar — WhatsApp style */}
+              {/* ── PINNED MESSAGE BAR ── */}
               {pinnedMsg && (
-                <div style={{ padding: "8px 14px", background: "var(--header-bg)", borderBottom: "2px solid #25d366", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer" }}
-                  onClick={() => {
-                    const el = document.getElementById(`msg-${pinnedMsg.msg._id}`);
-                    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }}>
-                  <div style={{ width: 3, height: 36, background: "#25d366", borderRadius: 3, flexShrink: 0 }} />
-                  <Pin size={13} style={{ color: "#25d366", flexShrink: 0 }} />
+                <div style={{ padding: "7px 14px", background: "var(--header-bg)", borderBottom: "2px solid #25d366", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer" }}
+                  onClick={() => { const el = document.getElementById(`msg-${pinnedMsg.msg._id}`); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }}>
+                  <div style={{ width: 3, height: 32, background: "#25d366", borderRadius: 3, flexShrink: 0 }} />
+                  <span style={{ fontSize: 16, flexShrink: 0 }}>📌</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#25d366" }}>Pinned Message</p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {pinnedMsg.msg.content || "📎 Attachment"}
-                    </p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pinnedMsg.msg.content || "📎 Attachment"}</p>
                   </div>
-                  <button onClick={e => { e.stopPropagation(); setPinnedMsg(null); }}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", padding: 4 }}>
+                  <button onClick={e => { e.stopPropagation(); setPinnedMsg(null); setMsgs(p => p.map(m => ({ ...m, pinned: false }))); }}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", padding: 4, flexShrink: 0 }}>
                     <X size={14} />
                   </button>
                 </div>
@@ -826,9 +814,7 @@ function MessagesContent() {
                     {dayMsgs.map((msg, i) => {
                       const mine      = String(msg.senderId?._id || msg.senderId) === myId;
                       const rawFileUrl = fixUrl(msg.fileUrl);
-                      // Only treat as real file if it's an absolute URL — prevents showing "Attachment" on bad data
                       const fileUrl   = rawFileUrl && (rawFileUrl.startsWith("http://") || rawFileUrl.startsWith("https://")) ? rawFileUrl : null;
-                      // If fileUrl is invalid/missing, treat the message as plain text regardless of stored type
                       const msgType   = fileUrl ? (msg.type || "text") : "text";
                       const isImg     = msgType === "image" && !!fileUrl;
                       const reactions = msg.reactions || {};
@@ -837,9 +823,9 @@ function MessagesContent() {
 
                       return (
                         <div key={msg._id || i} id={`msg-${msg._id}`} className="msg-wrap" style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: 5, alignItems: "flex-end", gap: 6, position: "relative" }}>
-                          {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
+                          {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
 
-                          <div style={{ maxWidth: isMobile ? "83%" : "65%", position: "relative" }}>
+                          <div style={{ maxWidth: isMobile ? "83%" : "65%", display: "flex", flexDirection: "column" }}>
                             {msg.replyTo && (
                               <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
                                 <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || "Attachment"}</p>
@@ -847,7 +833,7 @@ function MessagesContent() {
                             )}
 
                             <div className="msg-b" style={{ padding: isImg ? 4 : "9px 13px", borderRadius: msg.replyTo ? (mine ? "0 14px 4px 14px" : "14px 0 14px 4px") : (mine ? "18px 18px 4px 18px" : "4px 18px 18px 18px"), background: mine ? "#3b82f6" : "var(--bubble-other-bg)", color: mine ? "#fff" : "var(--bubble-other-color)", border: mine ? "none" : "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", opacity: msg.pending ? 0.65 : 1 }}>
-                              {msg.pinned && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.8, color: "#25d366" }}>📌 Pinned</span>}
+                              {msg.pinned && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.8, color: mine ? "#a7f3d0" : "#25d366" }}>📌 Pinned</span>}
                               {isStarred && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.7 }}>⭐ starred</span>}
                               {msg.content && (
                                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>
@@ -867,6 +853,7 @@ function MessagesContent() {
                               )}
                             </div>
 
+                            {/* ── REACTIONS BELOW BUBBLE (inline, not absolute) ── */}
                             {hasR && (
                               <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 4, justifyContent: mine ? "flex-end" : "flex-start" }}>
                                 {Object.entries(reactions).map(([emoji, users]) => (
@@ -874,7 +861,7 @@ function MessagesContent() {
                                     style={{ padding: "2px 7px", borderRadius: 12, background: users.includes(myId) ? "#dbeafe" : "rgba(255,255,255,0.9)", border: `1px solid ${users.includes(myId) ? "#93c5fd" : "rgba(0,0,0,0.1)"}`, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", transition: "transform 0.1s" }}
                                     onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
                                     onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-                                    {emoji}{users.length > 1 && <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{users.length}</span>}
+                                    {emoji}{users.length > 1 && <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700 }}>{users.length}</span>}
                                   </button>
                                 ))}
                               </div>
@@ -887,7 +874,7 @@ function MessagesContent() {
                           </div>
 
                           {!msg.pending && (
-                            <div className="msg-actions" style={{ opacity: 0, display: "flex", alignItems: "center", marginBottom: 0, flexDirection: mine ? "row" : "row-reverse" }}>
+                            <div className="msg-actions" style={{ opacity: 0, display: "flex", alignItems: "center", flexDirection: mine ? "row" : "row-reverse" }}>
                               <button onClick={(e) => { e.stopPropagation(); setMenuState({ msg, x: e.clientX, y: e.clientY }); }}
                                 style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.9)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", backdropFilter: "blur(4px)" }}>
                                 <MoreVertical size={13} style={{ color: "#64748b" }} />
@@ -903,7 +890,7 @@ function MessagesContent() {
                               onReact={(emoji) => addReaction(msg._id, emoji)}
                               onCopy={() => navigator.clipboard?.writeText(msg.content || "")}
                               onStar={() => setStarred(p => { const n = new Set(p); n.has(msg._id) ? n.delete(msg._id) : n.add(msg._id); return n; })}
-                              onPin={() => { setShowPin(msg); setMenuState(null); }}
+                              onPin={() => { setPinTarget(msg); setMenuState(null); }}
                               onClose={() => setMenuState(null)}
                             />
                           )}
@@ -978,22 +965,22 @@ function MessagesContent() {
         )}
       </div>
 
-      {/* Pin Duration Modal */}
-      {showPinModal && (
-        <PinDurationModal
-          onPin={(duration) => {
-            setPinnedMsg({ msg: showPinModal, duration });
-            setMsgs(p => p.map(m => m._id === showPinModal._id ? { ...m, pinned: true } : { ...m, pinned: false }));
-          }}
-          onClose={() => setShowPin(null)}
-        />
-      )}
-
       {/* Profile Modal */}
       {profileUser && (
         <ProfileModal user={profileUser} onClose={() => setProfileU(null)}
           onMessage={() => { setProfileU(null); inputRef.current?.focus(); }}
           onCall={() => { setProfileU(null); router.push(`/dashboard/${role}/video-calls?contact=${profileUser._id}`); }}
+        />
+      )}
+
+      {/* ── PIN DURATION MODAL ── */}
+      {pinTarget && (
+        <PinDurationModal
+          onPin={(duration) => {
+            setMsgs(p => p.map(m => ({ ...m, pinned: m._id === pinTarget._id })));
+            setPinnedMsg({ msg: pinTarget, duration });
+          }}
+          onClose={() => setPinTarget(null)}
         />
       )}
 
