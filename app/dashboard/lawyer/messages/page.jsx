@@ -455,6 +455,32 @@ function DisappearTimerModal({ current, onSet, onClose }) {
     </div>
   );
 }
+// ── Image bubble with broken-image fallback ───────────────────────────────────
+function ImgBubble({ src, mine }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) {
+    return (
+      <a href={src} target="_blank" rel="noreferrer"
+        style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10,
+          background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg,#f1f5f9)",
+          textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)" }}>
+        <Download size={14} />
+        <div>
+          <p style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>📷 View image</p>
+          <p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Tap to open</p>
+        </div>
+      </a>
+    );
+  }
+  return (
+    <a href={src} target="_blank" rel="noreferrer">
+      <img src={src} alt="image"
+        onError={() => setBroken(true)}
+        style={{ maxWidth: 240, maxHeight: 220, borderRadius: 12, display: "block", objectFit: "cover" }} />
+    </a>
+  );
+}
+
 function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onStar, onPin, onForward, onClose, x, y }) {
   const ref                             = useRef(null);
   const [showAllEmoji, setShowAllEmoji] = useState(false);
@@ -1367,7 +1393,7 @@ function MessagesContent() {
                                 {disappearTimer !== "off" && !msg.pending && (
                                   <span style={{ fontSize: 9, marginBottom: 2, display: "block", opacity: 0.65, color: mine ? "rgba(255,255,255,0.7)" : "#d97706" }}>⏳ Disappearing</span>
                                 )}
-                                {msg.content && !["📎 File", "📎 Attachment", "Attachment", "🎤 Voice note"].includes(msg.content) && (
+                                {msg.content && !["📎 File", "📎 Attachment", "Attachment", "🎤 Voice note", "📷 Image"].includes(msg.content.trim()) && (
                                   <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>
                                     {msgSearch ? msg.content.split(new RegExp(`(${msgSearch})`, "gi")).map((part, idx) =>
                                       part.toLowerCase() === msgSearch.toLowerCase()
@@ -1384,17 +1410,20 @@ function MessagesContent() {
                                 {isAudio && fileUrl && (
                                   <VoiceNotePlayer src={fileUrl} mine={mine} duration={msg.voiceDuration || 0} />
                                 )}
-                                {/* ── Image ── */}
+                                {/* ── Image (with broken-image fallback) ── */}
                                 {isImg && fileUrl && (
-                                  <a href={fileUrl} target="_blank" rel="noreferrer">
-                                    <img src={fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: isMobile ? 180 : 240, maxHeight: 220, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0 }} />
-                                  </a>
+                                  <ImgBubble src={fileUrl} mine={mine} />
                                 )}
                                 {/* ── File attachment ── */}
                                 {!isImg && !isAudio && fileUrl && (
                                   <a href={fileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
                                     <Download size={14} />
-                                    <div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{msg.fileName || "File"}</p><p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p></div>
+                                    <div style={{ minWidth: 0 }}>
+                                      <p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>
+                                        {["Attachment","attachment","File","file"].includes(msg.fileName) ? "📎 Download file" : (msg.fileName || "📎 File")}
+                                      </p>
+                                      <p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Tap to open</p>
+                                    </div>
                                   </a>
                                 )}
                               </div>
