@@ -8,7 +8,7 @@ import {
   selectRevenue,
   selectPaymentLoading,
 } from "@/store/slices/paymentSlice";
-import PaymentHistory from "@/components/payment/PaymentHistory";
+import PaymentHistory from "@/app/components/payment/PaymentHistory";
 import { DollarSign, TrendingUp, Users, CreditCard } from "lucide-react";
 
 const fmt = (cents) =>

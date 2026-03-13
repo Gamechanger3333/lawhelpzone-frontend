@@ -10,8 +10,8 @@ import {
   selectStripeStatus,
   selectPaymentLoading,
 } from "@/store/slices/paymentSlice";
-import StripeSetupBanner from "@/components/payment/StripeSetupBanner";
-import PaymentHistory from "@/components/payment/PaymentHistory";
+import StripeSetupBanner from "@/app/components/payment/StripeSetupBanner";
+import PaymentHistory from "@/app/components/payment/PaymentHistory";
 import { DollarSign, TrendingUp, Clock, ExternalLink, Loader2 } from "lucide-react";
 
 const fmt = (cents) =>

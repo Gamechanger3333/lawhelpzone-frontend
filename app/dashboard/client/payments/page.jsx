@@ -1,7 +1,7 @@
 "use client";
 // app/dashboard/client/payments/page.jsx
 
-import PaymentHistory from "@/components/payment/PaymentHistory";
+import PaymentHistory from "@/app/components/payment/PaymentHistory";
 import { CreditCard, ShieldCheck } from "lucide-react";
 
 export default function ClientPaymentsPage() {
