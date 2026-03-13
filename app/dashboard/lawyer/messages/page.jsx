@@ -702,6 +702,7 @@ function MessagesContent() {
   const [recording,   setRecording]  = useState(false);
   const [recSeconds,  setRecSeconds] = useState(0);
   const mediaRecRef   = useRef(null);
+  const recStreamRef  = useRef(null);   // ← store stream separately so we can stop tracks
   const recChunksRef  = useRef([]);
   const recTimerRef   = useRef(null);
   const sendMsgWithAttachmentRef = useRef(null);
@@ -738,7 +739,9 @@ function MessagesContent() {
   const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"].find(t => MediaRecorder.isTypeSupported(t)) || "";
+      recStreamRef.current = stream;  // ← store stream so we can stop tracks later
+      const mimeType = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"]
+        .find(t => MediaRecorder.isTypeSupported(t)) || "";
       const mr = new MediaRecorder(stream, mimeType ? { mimeType } : {});
       recChunksRef.current = [];
       mr.ondataavailable = e => { if (e.data.size > 0) recChunksRef.current.push(e.data); };
@@ -748,41 +751,57 @@ function MessagesContent() {
       setRecSeconds(0);
       recTimerRef.current = setInterval(() => setRecSeconds(p => p + 1), 1000);
     } catch {
-      alert("Microphone access denied or not available.");
+      alert("Microphone access denied. Please allow microphone permission in your browser.");
     }
   }, []);
 
   const stopRecording = useCallback((cancel = false) => {
     if (!mediaRecRef.current) return;
     clearInterval(recTimerRef.current);
-    const mr = mediaRecRef.current;
+    const mr      = mediaRecRef.current;
+    const stream  = recStreamRef.current;
+    const stopTracks = () => { stream?.getTracks().forEach(t => t.stop()); recStreamRef.current = null; };
+
     if (cancel) {
       mr.stop();
-      mr.stream?.getTracks().forEach(t => t.stop());
+      stopTracks();
       mediaRecRef.current = null;
       setRecording(false);
       setRecSeconds(0);
       recChunksRef.current = [];
       return;
     }
+
+    const durSec = recSeconds;   // capture before state resets
+
     mr.onstop = async () => {
-      const blob    = new Blob(recChunksRef.current, { type: mr.mimeType || "audio/webm" });
-      const ext     = (mr.mimeType || "audio/webm").includes("mp4") ? "mp4" : "webm";
-      const durSec  = recSeconds;
-      mr.stream?.getTracks().forEach(t => t.stop());
-      mediaRecRef.current = null;
+      stopTracks();
+      const chunks = recChunksRef.current.slice();
+      recChunksRef.current = [];
+      mediaRecRef.current  = null;
       setRecording(false);
       setRecSeconds(0);
-      recChunksRef.current = [];
-      // Upload as file
-      const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: blob.type });
+
+      if (!chunks.length) { alert("No audio recorded. Please try again."); return; }
+
+      const mimeType = mr.mimeType || "audio/webm";
+      const blob     = new Blob(chunks, { type: mimeType });
+      const ext      = mimeType.includes("mp4") ? "mp4" : mimeType.includes("ogg") ? "ogg" : "webm";
+      const file     = new File([blob], `voice-${Date.now()}.${ext}`, { type: mimeType });
+
       setUpload(true);
       try {
         const att = await uploadFile(file);
+        if (!att?.url) throw new Error("No URL returned from upload");
         await sendMsgWithAttachmentRef.current?.({ ...att, voiceDuration: durSec, type: "audio" });
-      } catch { alert("Voice note upload failed."); }
-      finally { setUpload(false); }
+      } catch (err) {
+        console.error("Voice note upload error:", err);
+        alert("Voice note upload failed. Check that your backend /api/upload accepts audio files.");
+      } finally {
+        setUpload(false);
+      }
     };
+
     mr.stop();
   }, [recSeconds]);
 
@@ -1011,7 +1030,11 @@ function MessagesContent() {
   useEffect(() => { if (!loadC) setTimeout(() => setReady(true), 80); }, [loadC]);
 
   // Cleanup recording on unmount
-  useEffect(() => () => { clearInterval(recTimerRef.current); mediaRecRef.current?.stop(); }, []);
+  useEffect(() => () => {
+    clearInterval(recTimerRef.current);
+    if (mediaRecRef.current) { try { mediaRecRef.current.stop(); } catch {} }
+    if (recStreamRef.current) { recStreamRef.current.getTracks().forEach(t => t.stop()); }
+  }, []);
 
   const filteredContacts = contacts.filter(c =>
     !search || (c.name || "").toLowerCase().includes(search.toLowerCase()) || (c.email || "").toLowerCase().includes(search.toLowerCase())
@@ -1326,7 +1349,15 @@ function MessagesContent() {
                             <div className="msg-swipe" style={{ maxWidth: isMobile ? "83%" : "65%", display: "flex", flexDirection: "column", transform: `translateX(${msgSwipe}px)` }}>
                               {msg.replyTo && (
                                 <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
-                                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || (msg.replyTo.type === "audio" ? "🎤 Voice note" : msg.replyTo.fileUrl ? "📎 File" : "")}</p>
+                                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    ↩ {(() => {
+                                      const c = msg.replyTo.content || "";
+                                      if (["Attachment","📎 File","📎 Attachment"].includes(c)) {
+                                        return msg.replyTo.type === "audio" ? "🎤 Voice note" : "📎 File";
+                                      }
+                                      return c || (msg.replyTo.type === "audio" ? "🎤 Voice note" : msg.replyTo.fileUrl ? "📎 File" : "Message");
+                                    })()}
+                                  </p>
                                 </div>
                               )}
 
@@ -1453,7 +1484,14 @@ function MessagesContent() {
                     <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: editingMsg ? "#d97706" : "#3b82f6" }}>
                       {editingMsg ? "✏️ Editing · expires in 15 min" : `↩ Replying to ${activeInfo?.name || "message"}`}
                     </p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(editingMsg || replyTo)?.content || ((editingMsg || replyTo)?.type === "audio" ? "🎤 Voice note" : (editingMsg || replyTo)?.fileUrl ? "📎 File" : "")}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {(() => {
+                        const m = editingMsg || replyTo;
+                        const c = m?.content || "";
+                        if (["Attachment","📎 File","📎 Attachment"].includes(c)) return m?.type === "audio" ? "🎤 Voice note" : "📎 File";
+                        return c || (m?.type === "audio" ? "🎤 Voice note" : m?.fileUrl ? "📎 File" : "");
+                      })()}
+                    </p>
                   </div>
                   <button onClick={cancelAction} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16} /></button>
                 </div>
