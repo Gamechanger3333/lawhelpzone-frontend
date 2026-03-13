@@ -922,7 +922,7 @@ function MessagesContent() {
 
                       return (
                         <div key={msg._id || i} id={`msg-${msg._id}`} className="msg-wrap"
-                          style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: 5, alignItems: "flex-end", gap: 6, position: "relative" }}>
+                          style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: hasR ? 14 : 5, alignItems: "flex-end", gap: 6, position: "relative" }}>
                           {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
 
                           {/* ── Message column (bubble + reactions + timestamp) ── */}
@@ -966,19 +966,19 @@ function MessagesContent() {
 
                             {/* ── REACTIONS — inline below bubble ── */}
                             {hasR && (
-                              <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginTop: 4, justifyContent: mine ? "flex-end" : "flex-start" }}>
+                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: -8, paddingTop: 0, justifyContent: mine ? "flex-end" : "flex-start", position: "relative", zIndex: 2, paddingLeft: mine ? 0 : 6, paddingRight: mine ? 6 : 0 }}>
                                 {Object.entries(reactions).map(([emoji, users]) => (
-                                  <button key={emoji} onClick={() => addReaction(msg._id, emoji)}
-                                    style={{ padding: "2px 7px", borderRadius: 12, background: users.includes(myId) ? "#dbeafe" : "rgba(255,255,255,0.9)", border: `1px solid ${users.includes(myId) ? "#93c5fd" : "rgba(0,0,0,0.1)"}`, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", gap: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.08)", transition: "transform 0.1s" }}
-                                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+                                  <span key={emoji} onClick={() => addReaction(msg._id, emoji)}
+                                    style={{ padding: "2px 7px", borderRadius: 20, background: users.includes(myId) ? "#dbeafe" : "var(--bg-card, #fff)", border: `1.5px solid ${users.includes(myId) ? "#93c5fd" : "rgba(0,0,0,0.12)"}`, cursor: "pointer", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.12)", lineHeight: 1, userSelect: "none", whiteSpace: "nowrap", transition: "transform 0.1s" }}
+                                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
                                     onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-                                    {emoji}{users.length > 1 && <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>{users.length}</span>}
-                                  </button>
+                                    {emoji}{users.length > 1 && <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginLeft: 1 }}>{users.length}</span>}
+                                  </span>
                                 ))}
                               </div>
                             )}
 
-                            <p style={{ margin: "2px 4px 0", fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left", display: "flex", alignItems: "center", justifyContent: mine ? "flex-end" : "flex-start", gap: 3 }}>
+                            <p style={{ margin: `${hasR ? "6px" : "2px"} 4px 0`, fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left", display: "flex", alignItems: "center", justifyContent: mine ? "flex-end" : "flex-start", gap: 3 }}>
                               {msg.pending ? "Sending…" : fmt(msg.createdAt || Date.now())}
                               {mine && !msg.pending && (msg.read ? <CheckCheck size={11} style={{ color: "#3b82f6" }} /> : <Check size={11} />)}
                             </p>
