@@ -24,8 +24,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAppSelector } from "../../../../store/index";
 import {
   Video, X, Send, Paperclip, Smile, Search, Plus,
-  ChevronLeft, Edit2, Trash2, Reply, MoreVertical,
-  Check, CheckCheck, Download, Star, Copy, AlertCircle, User, Mic, Square, Play, Pause
+  ChevronLeft, ChevronUp, ChevronDown, Edit2, Trash2, Reply, MoreVertical,
+  Check, CheckCheck, Download, Star, Copy, AlertCircle, User, Mic, Square, Play, Pause,
+  Clock, Eye, Timer, Link
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -73,7 +74,11 @@ const fmtDuration = (sec) => {
   return `${m}:${s.toString().padStart(2, "0")}`;
 };
 const canEdit              = (msg) => msg?.createdAt && Date.now() - new Date(msg.createdAt).getTime() < 15 * 60 * 1000;
-const canDeleteForEveryone = (msg) => msg?.createdAt && Date.now() - new Date(msg.createdAt).getTime() < 60 * 60 * 60 * 1000;
+const canDeleteForEveryone = (msg) => msg?.createdAt && Date.now() - new Date(msg.createdAt).getTime() < 60 * 60 * 1000;
+
+// ── URL extractor ─────────────────────────────────────────────────────────────
+const URL_RE = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
+const extractUrls = (text) => { try { return [...(text || "").matchAll(URL_RE)].map(m => m[0]); } catch { return []; } };
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function Skeleton({ w = "100%", h = 16, r = 8 }) {
@@ -319,7 +324,137 @@ function VoiceNotePlayer({ src, mine, duration }) {
   );
 }
 
-// ── Message Context Menu ──────────────────────────────────────────────────────
+// ── Link Preview Card ─────────────────────────────────────────────────────────
+function LinkPreviewCard({ url, mine }) {
+  const [meta, setMeta] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        // Use microlink for OG data (free, no key needed for basic use)
+        const r = await fetch(`https://api.microlink.io?url=${encodeURIComponent(url)}&screenshot=false`);
+        if (!r.ok) { setFailed(true); return; }
+        const d = await r.json();
+        if (!cancelled && d.status === "success") {
+          setMeta({ title: d.data?.title, description: d.data?.description, image: d.data?.image?.url, site: d.data?.publisher || new URL(url).hostname });
+        } else { setFailed(true); }
+      } catch { if (!cancelled) setFailed(true); }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [url]);
+
+  if (failed) return null;
+  const host = (() => { try { return new URL(url).hostname.replace("www.", ""); } catch { return url; } })();
+
+  return (
+    <a href={url} target="_blank" rel="noreferrer" style={{ display: "block", marginTop: 6, borderRadius: 10, overflow: "hidden", border: `1px solid ${mine ? "rgba(255,255,255,0.25)" : "rgba(0,0,0,0.1)"}`, textDecoration: "none", background: mine ? "rgba(255,255,255,0.12)" : "var(--input-bg,#f8fafc)", transition: "opacity 0.15s" }}
+      onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+      onMouseLeave={e => e.currentTarget.style.opacity = "1"}>
+      {meta?.image && <img src={meta.image} alt="" style={{ width: "100%", height: 110, objectFit: "cover", display: "block" }} onError={e => e.target.style.display = "none"} />}
+      <div style={{ padding: "8px 10px" }}>
+        <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: mine ? "rgba(255,255,255,0.65)" : "#3b82f6", textTransform: "uppercase", letterSpacing: 0.5 }}>{meta?.site || host}</p>
+        {meta?.title && <p style={{ margin: "2px 0 0", fontSize: 12, fontWeight: 700, color: mine ? "#fff" : "var(--text-heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{meta.title}</p>}
+        {meta?.description && <p style={{ margin: "2px 0 0", fontSize: 11, color: mine ? "rgba(255,255,255,0.75)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{meta.description}</p>}
+        {!meta && <p style={{ margin: 0, fontSize: 11, color: mine ? "rgba(255,255,255,0.65)" : "#3b82f6", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🔗 {host}</p>}
+      </div>
+    </a>
+  );
+}
+
+// ── Reactions Summary Modal ───────────────────────────────────────────────────
+function ReactSummaryModal({ reactions, myId, myName, otherName, onClose }) {
+  const ref = useRef(null);
+  const [tab, setTab] = useState("all");
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    setTimeout(() => document.addEventListener("mousedown", h), 50);
+    return () => document.removeEventListener("mousedown", h);
+  }, [onClose]);
+
+  const allEmojis = Object.keys(reactions);
+  const rows = tab === "all"
+    ? allEmojis.flatMap(emoji => reactions[emoji].map(uid => ({ emoji, uid })))
+    : (reactions[tab] || []).map(uid => ({ emoji: tab, uid }));
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div ref={ref} style={{ background: "var(--header-bg,#fff)", borderRadius: 20, width: 320, maxHeight: 400, overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 24px 64px rgba(0,0,0,0.22)", animation: "scIn 0.2s ease" }}>
+        <div style={{ padding: "14px 16px 0", borderBottom: "1px solid var(--border-color)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontWeight: 800, fontSize: 15, color: "var(--text-heading)" }}>Reactions</span>
+            <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16} /></button>
+          </div>
+          <div style={{ display: "flex", gap: 4, overflowX: "auto", scrollbarWidth: "none", paddingBottom: 8 }}>
+            <button onClick={() => setTab("all")} style={{ flexShrink: 0, padding: "4px 12px", borderRadius: 20, border: "none", background: tab === "all" ? "#3b82f6" : "var(--input-bg,#f1f5f9)", color: tab === "all" ? "#fff" : "var(--text-muted)", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+              All {Object.values(reactions).flat().length}
+            </button>
+            {allEmojis.map(e => (
+              <button key={e} onClick={() => setTab(e)} style={{ flexShrink: 0, padding: "4px 10px", borderRadius: 20, border: "none", background: tab === e ? "#3b82f6" : "var(--input-bg,#f1f5f9)", color: tab === e ? "#fff" : "var(--text-heading)", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                {e} <span style={{ fontSize: 11, fontWeight: 700 }}>{reactions[e].length}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {rows.map(({ emoji, uid }, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px", borderBottom: "1px solid var(--border-color)" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#3b82f618", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>
+                {uid === myId ? (myName || "Me").charAt(0).toUpperCase() : (otherName || "?").charAt(0).toUpperCase()}
+              </div>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "var(--text-heading)" }}>{uid === myId ? "You" : (otherName || "Them")}</span>
+              <span style={{ fontSize: 20 }}>{emoji}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Disappear Timer Modal ─────────────────────────────────────────────────────
+function DisappearTimerModal({ current, onSet, onClose }) {
+  const [sel, setSel] = useState(current || "off");
+  const opts = [
+    { val: "off",  label: "Off",     desc: "Messages won't disappear" },
+    { val: "24h",  label: "24 hours",desc: "Messages delete after 1 day" },
+    { val: "7d",   label: "7 days",  desc: "Messages delete after a week" },
+    { val: "90d",  label: "90 days", desc: "Messages delete after 3 months" },
+  ];
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.35)" }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{ background: "var(--header-bg,#fff)", borderRadius: 20, width: 320, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.22)", animation: "scIn 0.2s ease" }}>
+        <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 15, color: "var(--text-heading)" }}>⏳ Disappearing Messages</p>
+            <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-muted)" }}>New messages will auto-delete</p>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16} /></button>
+        </div>
+        <div style={{ padding: "8px 0" }}>
+          {opts.map(o => (
+            <div key={o.val} onClick={() => setSel(o.val)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", cursor: "pointer", background: sel === o.val ? "#eff6ff" : "transparent", transition: "background 0.12s" }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${sel === o.val ? "#3b82f6" : "#cbd5e1"}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "border-color 0.15s" }}>
+                {sel === o.val && <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#3b82f6" }} />}
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "var(--text-heading)" }}>{o.label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)" }}>{o.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding: "10px 18px 16px" }}>
+          <button onClick={() => { onSet(sel); onClose(); }} style={{ width: "100%", padding: "11px", borderRadius: 12, border: "none", background: "#3b82f6", color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onStar, onPin, onForward, onClose, x, y }) {
   const ref                             = useRef(null);
   const [showAllEmoji, setShowAllEmoji] = useState(false);
@@ -561,15 +696,23 @@ function MessagesContent() {
   const [deletedMsgs, setDeleted]    = useState(new Set());
   const [profileUser, setProfileU]   = useState(null);
   // ── Pin state ───────────────────────────────────────────────────────────────
-  const [pinnedMsg,   setPinnedMsg]  = useState(null);   // { msg, duration }
-  const [pinTarget,   setPinTarget]  = useState(null);   // msg waiting for duration pick
+  const [pinnedMsg,   setPinnedMsg]  = useState(null);
+  const [pinTarget,   setPinTarget]  = useState(null);
   // ── Voice note state ────────────────────────────────────────────────────────
   const [recording,   setRecording]  = useState(false);
   const [recSeconds,  setRecSeconds] = useState(0);
   const mediaRecRef   = useRef(null);
   const recChunksRef  = useRef([]);
   const recTimerRef   = useRef(null);
-  const sendMsgWithAttachmentRef = useRef(null); // always-fresh ref for voice note upload
+  const sendMsgWithAttachmentRef = useRef(null);
+  // ── New feature state ───────────────────────────────────────────────────────
+  const [firstUnreadId,      setFirstUnreadId]      = useState(null);   // unread divider
+  const [reactSummary,       setReactSummary]       = useState(null);   // { msgId, reactions }
+  const [disappearTimer,     setDisappearTimer]     = useState("off");  // "off"|"24h"|"7d"|"90d"
+  const [showDisappearModal, setShowDisappearModal] = useState(false);
+  const [searchIdx,          setSearchIdx]          = useState(0);      // current jump-to result
+  const swipeStartX = useRef({});   // msgId -> touchstart X
+  const [swipeOffset, setSwipeOffset] = useState({});  // msgId -> current px offset
 
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
@@ -683,12 +826,19 @@ function MessagesContent() {
     try {
       const r = await fetch(`${API}/api/messages/${contactId}`, { credentials: "include", headers: HJ() });
       if (r.ok) {
-        const d = await r.json(); setMsgs(d.messages || []);
+        const d = await r.json();
+        const msgs = d.messages || [];
+        setMsgs(msgs);
+        // ── Find first unread message for divider ──
+        if (!silent) {
+          const firstUnread = msgs.find(m => String(m.senderId?._id || m.senderId) !== myId && !m.read);
+          setFirstUnreadId(firstUnread?._id || null);
+        }
         if (!silent) fetch(`${API}/api/messages/${contactId}/read`, { method: "PATCH", credentials: "include", headers: HJ() }).catch(() => {});
       }
     } catch {}
     if (!silent) setLoadM(false);
-  }, []);
+  }, [myId]);
 
   const deleteMsg = useCallback(async (msgId, mode) => {
     setDeleted(p => new Set([...p, msgId]));
@@ -799,6 +949,31 @@ function MessagesContent() {
 
   const cancelAction = () => { setEditing(null); setReplyTo(null); setText(""); setTimeout(() => autoResize(), 0); };
 
+  // ── Swipe-to-reply handlers ─────────────────────────────────────────────────
+  const onSwipeTouchStart = useCallback((msgId, e) => {
+    swipeStartX.current[msgId] = e.touches[0].clientX;
+  }, []);
+
+  const onSwipeTouchMove = useCallback((msgId, mine, e) => {
+    const startX = swipeStartX.current[msgId];
+    if (startX == null) return;
+    const dx = e.touches[0].clientX - startX;
+    // Only allow swipe right for other's messages, left for mine (like WhatsApp)
+    const swipe = mine ? Math.min(0, dx) : Math.max(0, dx);
+    const clamped = Math.max(-70, Math.min(70, swipe));
+    setSwipeOffset(p => ({ ...p, [msgId]: clamped }));
+  }, []);
+
+  const onSwipeTouchEnd = useCallback((msgId, msg, e) => {
+    const offset = swipeOffset[msgId] || 0;
+    if (Math.abs(offset) > 45) {
+      setReplyTo(msg);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+    setSwipeOffset(p => ({ ...p, [msgId]: 0 }));
+    delete swipeStartX.current[msgId];
+  }, [swipeOffset]);
+
   useEffect(() => {
     if (!user) { setTimeout(() => setReady(true), 500); return; }
     loadContacts();
@@ -841,9 +1016,30 @@ function MessagesContent() {
   const filteredContacts = contacts.filter(c =>
     !search || (c.name || "").toLowerCase().includes(search.toLowerCase()) || (c.email || "").toLowerCase().includes(search.toLowerCase())
   );
-  const visibleMsgs = messages.filter(m => !deletedMsgs.has(m._id));
-  const displayMsgs = msgSearch ? visibleMsgs.filter(m => (m.content || "").toLowerCase().includes(msgSearch.toLowerCase())) : visibleMsgs;
-  const grouped     = displayMsgs.reduce((acc, msg) => {
+
+  // ── Disappear filter ────────────────────────────────────────────────────────
+  const disappearMs = { "24h": 86400000, "7d": 604800000, "90d": 7776000000 }[disappearTimer] || null;
+  const visibleMsgs = messages.filter(m =>
+    !deletedMsgs.has(m._id) &&
+    (!disappearMs || !m.createdAt || Date.now() - new Date(m.createdAt).getTime() < disappearMs)
+  );
+  const searchMatches = msgSearch
+    ? visibleMsgs.filter(m => (m.content || "").toLowerCase().includes(msgSearch.toLowerCase()))
+    : [];
+  const displayMsgs = msgSearch ? searchMatches : visibleMsgs;
+  const safeIdx     = searchMatches.length ? ((searchIdx % searchMatches.length) + searchMatches.length) % searchMatches.length : 0;
+  const jumpToSearchResult = (delta) => {
+    if (!searchMatches.length) return;
+    const next = ((safeIdx + delta) % searchMatches.length + searchMatches.length) % searchMatches.length;
+    setSearchIdx(next);
+    const target = searchMatches[next];
+    if (target) {
+      const el = document.getElementById(`msg-${target._id}`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  const grouped = displayMsgs.reduce((acc, msg) => {
     const day = fmtDay(msg.createdAt || Date.now()); if (!acc[day]) acc[day] = []; acc[day].push(msg); return acc;
   }, {});
 
@@ -880,6 +1076,10 @@ function MessagesContent() {
         .typing-dot{width:7px;height:7px;border-radius:50%;background:#94a3b8;display:inline-block;margin:0 2px;animation:typing 1.2s infinite;}
         .typing-dot:nth-child(2){animation-delay:0.2s}.typing-dot:nth-child(3){animation-delay:0.4s}
         .rec-pulse{animation:recPulse 1s ease infinite;}
+        .msg-swipe{transition:transform 0.18s cubic-bezier(.4,0,.2,1);}
+        .unread-divider{display:flex;align-items:center;gap:10px;margin:10px 0;}
+        .unread-divider::before,.unread-divider::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,#3b82f644,transparent);}
+        @keyframes disappearTick{0%{opacity:1}80%{opacity:1}100%{opacity:0}}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
       `}</style>
 
@@ -972,16 +1172,40 @@ function MessagesContent() {
               {/* Header */}
               <div style={{ padding: isMobile ? "10px 12px" : "12px 20px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
                 {isMobile && <button onClick={() => setShowSidebar(true)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", color: "var(--text-muted)" }}><ChevronLeft size={22} /></button>}
-                <div onClick={() => setProfileU(activeInfo)} style={{ cursor: "pointer" }}>
+                <div onClick={() => setProfileU(activeInfo)} style={{ cursor: "pointer", position: "relative" }}>
                   <Avatar user={activeInfo} size={isMobile ? 36 : 42} online={activeOnline} />
+                  {isTyping && (
+                    <div style={{ position: "absolute", bottom: -2, right: -2, width: 16, height: 16, borderRadius: "50%", background: "#10b981", border: "2px solid var(--header-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 8 }}>✍</span>
+                    </div>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0, cursor: "pointer" }} onClick={() => setProfileU(activeInfo)}>
-                  <p style={{ margin: 0, fontSize: isMobile ? 14 : 15, fontWeight: 800, color: "var(--text-heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeName}</p>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 600 }}>
-                    {isTyping ? <span style={{ color: "#10b981" }}>typing…</span> : <span style={{ color: activeOnline ? "#22c55e" : "#94a3b8" }}>{activeOnline ? "● Online" : "● Offline"}</span>}
+                  <p style={{ margin: 0, fontSize: isMobile ? 14 : 15, fontWeight: 800, color: "var(--text-heading)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6 }}>
+                    {activeName}
+                    {disappearTimer !== "off" && <span title={`Disappearing messages: ${disappearTimer}`} style={{ fontSize: 11, background: "#fef3c7", color: "#d97706", padding: "1px 6px", borderRadius: 8, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}><Timer size={9} />⏳</span>}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 11, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+                    {isTyping
+                      ? <span style={{ color: "#10b981", display: "flex", alignItems: "center", gap: 4 }}>
+                          <span className="typing-dot" style={{ background: "#10b981" }} />
+                          <span className="typing-dot" style={{ background: "#10b981" }} />
+                          <span className="typing-dot" style={{ background: "#10b981" }} />
+                          typing…
+                        </span>
+                      : <span style={{ color: activeOnline ? "#22c55e" : "#94a3b8" }}>
+                          <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: activeOnline ? "#22c55e" : "#94a3b8", marginRight: 4 }} />
+                          {activeOnline ? "Online" : "Offline"}
+                        </span>
+                    }
                     {!isMobile && <span style={{ color: "var(--text-muted)" }}> · <span style={{ textTransform: "capitalize" }}>{activeInfo?.role}</span></span>}
                   </p>
                 </div>
+                <button className="icon-btn" onClick={() => setShowDisappearModal(true)}
+                  title="Disappearing messages"
+                  style={{ width: 32, height: 32, borderRadius: 10, background: disappearTimer !== "off" ? "#fef3c7" : "var(--input-bg)", border: `1px solid ${disappearTimer !== "off" ? "#fde68a" : "var(--border-color)"}` }}>
+                  <Timer size={15} style={{ color: disappearTimer !== "off" ? "#d97706" : "var(--text-muted)" }} />
+                </button>
                 <button className="icon-btn" onClick={() => setShowMsgSrch(p => !p)} style={{ width: 32, height: 32, borderRadius: 10, background: showMsgSrch ? "#eff6ff" : "var(--input-bg)", border: `1px solid ${showMsgSrch ? "#3b82f6" : "var(--border-color)"}` }}>
                   <Search size={14} style={{ color: showMsgSrch ? "#3b82f6" : "var(--text-muted)" }} />
                 </button>
@@ -1015,11 +1239,27 @@ function MessagesContent() {
                 <div style={{ padding: "8px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", gap: 8, alignItems: "center" }}>
                   <div style={{ position: "relative", flex: 1 }}>
                     <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-                    <input value={msgSearch} onChange={e => setMsgSearch(e.target.value)} placeholder="Search messages…" autoFocus
+                    <input value={msgSearch} onChange={e => { setMsgSearch(e.target.value); setSearchIdx(0); }} placeholder="Search messages…" autoFocus
+                      onKeyDown={e => { if (e.key === "Enter") jumpToSearchResult(e.shiftKey ? -1 : 1); }}
                       style={{ width: "100%", padding: "7px 10px 7px 28px", borderRadius: 10, border: "1px solid var(--input-border)", fontSize: 13, outline: "none", background: "var(--input-bg)", color: "var(--text-primary)", boxSizing: "border-box" }} />
                   </div>
-                  {msgSearch && <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{displayMsgs.length} found</span>}
-                  <button onClick={() => { setShowMsgSrch(false); setMsgSearch(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={15} /></button>
+                  {msgSearch && searchMatches.length > 0 && (
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap", minWidth: 50, textAlign: "center" }}>{safeIdx + 1} / {searchMatches.length}</span>
+                  )}
+                  {msgSearch && searchMatches.length === 0 && (
+                    <span style={{ fontSize: 11, color: "#ef4444", whiteSpace: "nowrap" }}>No results</span>
+                  )}
+                  {msgSearch && searchMatches.length > 1 && (
+                    <>
+                      <button onClick={() => jumpToSearchResult(-1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--border-color)", background: "var(--input-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <ChevronUp size={14} style={{ color: "var(--text-muted)" }} />
+                      </button>
+                      <button onClick={() => jumpToSearchResult(1)} style={{ width: 28, height: 28, borderRadius: 8, border: "1px solid var(--border-color)", background: "var(--input-bg)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <ChevronDown size={14} style={{ color: "var(--text-muted)" }} />
+                      </button>
+                    </>
+                  )}
+                  <button onClick={() => { setShowMsgSrch(false); setMsgSearch(""); setSearchIdx(0); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={15} /></button>
                 </div>
               )}
 
@@ -1052,93 +1292,143 @@ function MessagesContent() {
                       const reactions  = msg.reactions || {};
                       const hasR       = Object.keys(reactions).length > 0;
                       const isStarred  = starredMsgs.has(msg._id);
+                      const urls       = !isAudio && !isImg ? extractUrls(msg.content || "") : [];
+                      const isSearchHit = msgSearch && searchMatches[safeIdx]?._id === msg._id;
+                      const isUnreadDivider = msg._id === firstUnreadId;
+                      const msgSwipe   = swipeOffset[msg._id] || 0;
 
                       return (
-                        <div key={msg._id || i} id={`msg-${msg._id}`} className="msg-wrap"
-                          style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: hasR ? 14 : 5, alignItems: "flex-end", gap: 6, position: "relative" }}>
-                          {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
+                        <div key={msg._id || i}>
+                          {/* ── Unread messages divider ── */}
+                          {isUnreadDivider && (
+                            <div className="unread-divider" style={{ margin: "12px 0 8px" }}>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", background: "#eff6ff", padding: "3px 14px", borderRadius: 20, whiteSpace: "nowrap" }}>
+                                🔵 Unread messages
+                              </span>
+                            </div>
+                          )}
+                          <div id={`msg-${msg._id}`} className="msg-wrap"
+                            style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginBottom: hasR ? 14 : 5, alignItems: "flex-end", gap: 6, position: "relative",
+                              outline: isSearchHit ? "2px solid #3b82f6" : "none", borderRadius: 14, transition: "outline 0.2s" }}
+                            onTouchStart={e => onSwipeTouchStart(msg._id, e)}
+                            onTouchMove={e => onSwipeTouchMove(msg._id, mine, e)}
+                            onTouchEnd={e => onSwipeTouchEnd(msg._id, msg, e)}>
+                            {!mine && <div style={{ width: 26, height: 26, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{activeName.charAt(0).toUpperCase()}</div>}
 
-                          {/* ── Message column (bubble + reactions + timestamp) ── */}
-                          <div style={{ maxWidth: isMobile ? "83%" : "65%", display: "flex", flexDirection: "column" }}>
-                            {msg.replyTo && (
-                              <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
-                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || (msg.replyTo.type === "audio" ? "🎤 Voice note" : msg.replyTo.fileUrl ? "📎 File" : "")}</p>
+                            {/* Swipe reply hint arrow */}
+                            {Math.abs(msgSwipe) > 20 && (
+                              <div style={{ position: "absolute", [mine ? "right" : "left"]: -32, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: "#3b82f6", display: "flex", alignItems: "center", justifyContent: "center", opacity: Math.min(1, Math.abs(msgSwipe) / 60), transition: "opacity 0.1s" }}>
+                                <Reply size={12} style={{ color: "#fff" }} />
                               </div>
                             )}
 
-                            <div className="msg-b" style={{ padding: isImg ? 4 : isAudio ? "10px 14px" : "9px 13px", borderRadius: msg.replyTo ? (mine ? "0 14px 4px 14px" : "14px 0 14px 4px") : (mine ? "18px 18px 4px 18px" : "4px 18px 18px 18px"), background: mine ? "#3b82f6" : "var(--bubble-other-bg)", color: mine ? "#fff" : "var(--bubble-other-color)", border: mine ? "none" : "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", opacity: msg.pending ? 0.65 : 1 }}>
-                              {msg.pinned && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.8, color: mine ? "rgba(255,255,255,0.8)" : "#3b82f6" }}>📌 Pinned</span>}
-                              {isStarred  && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.7 }}>⭐ starred</span>}
-                              {msg.content && !["📎 File", "📎 Attachment", "Attachment", "🎤 Voice note"].includes(msg.content) && (
-                                <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>
-                                  {msgSearch ? msg.content.split(new RegExp(`(${msgSearch})`, "gi")).map((part, idx) =>
-                                    part.toLowerCase() === msgSearch.toLowerCase()
-                                      ? <mark key={idx} style={{ background: "#fef08a", borderRadius: 2, padding: "0 1px" }}>{part}</mark> : part
-                                  ) : msg.content}
-                                  {msg.edited && <span style={{ fontSize: 10, opacity: 0.55, marginLeft: 6, fontStyle: "italic" }}>edited</span>}
-                                </p>
+                            {/* ── Message column (bubble + reactions + timestamp) ── */}
+                            <div className="msg-swipe" style={{ maxWidth: isMobile ? "83%" : "65%", display: "flex", flexDirection: "column", transform: `translateX(${msgSwipe}px)` }}>
+                              {msg.replyTo && (
+                                <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
+                                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || (msg.replyTo.type === "audio" ? "🎤 Voice note" : msg.replyTo.fileUrl ? "📎 File" : "")}</p>
+                                </div>
                               )}
-                              {/* ── Voice note player ── */}
-                              {isAudio && fileUrl && (
-                                <VoiceNotePlayer src={fileUrl} mine={mine} duration={msg.voiceDuration || 0} />
-                              )}
-                              {/* ── Image ── */}
-                              {isImg && fileUrl && (
-                                <a href={fileUrl} target="_blank" rel="noreferrer">
-                                  <img src={fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: isMobile ? 180 : 240, maxHeight: 220, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0 }} />
-                                </a>
-                              )}
-                              {/* ── File attachment ── */}
-                              {!isImg && !isAudio && fileUrl && (
-                                <a href={fileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
-                                  <Download size={14} />
-                                  <div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{msg.fileName || "File"}</p><p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p></div>
-                                </a>
-                              )}
-                            </div>
 
-                            {/* ── REACTIONS — inline below bubble ── */}
-                            {hasR && (
-                              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: -8, paddingTop: 0, justifyContent: mine ? "flex-end" : "flex-start", position: "relative", zIndex: 2, paddingLeft: mine ? 0 : 6, paddingRight: mine ? 6 : 0 }}>
-                                {Object.entries(reactions).map(([emoji, users]) => (
-                                  <span key={emoji} onClick={() => addReaction(msg._id, emoji)}
-                                    style={{ padding: "2px 7px", borderRadius: 20, background: users.includes(myId) ? "#dbeafe" : "var(--bg-card, #fff)", border: `1.5px solid ${users.includes(myId) ? "#93c5fd" : "rgba(0,0,0,0.12)"}`, cursor: "pointer", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.12)", lineHeight: 1, userSelect: "none", whiteSpace: "nowrap", transition: "transform 0.1s" }}
-                                    onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
-                                    onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-                                    {emoji}{users.length > 1 && <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginLeft: 1 }}>{users.length}</span>}
-                                  </span>
+                              <div className="msg-b" style={{ padding: isImg ? 4 : isAudio ? "10px 14px" : "9px 13px", borderRadius: msg.replyTo ? (mine ? "0 14px 4px 14px" : "14px 0 14px 4px") : (mine ? "18px 18px 4px 18px" : "4px 18px 18px 18px"), background: mine ? "#3b82f6" : "var(--bubble-other-bg)", color: mine ? "#fff" : "var(--bubble-other-color)", border: mine ? "none" : "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", opacity: msg.pending ? 0.65 : 1 }}>
+                                {msg.pinned && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.8, color: mine ? "rgba(255,255,255,0.8)" : "#3b82f6" }}>📌 Pinned</span>}
+                                {isStarred  && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.7 }}>⭐ starred</span>}
+                                {disappearTimer !== "off" && !msg.pending && (
+                                  <span style={{ fontSize: 9, marginBottom: 2, display: "block", opacity: 0.65, color: mine ? "rgba(255,255,255,0.7)" : "#d97706" }}>⏳ Disappearing</span>
+                                )}
+                                {msg.content && !["📎 File", "📎 Attachment", "Attachment", "🎤 Voice note"].includes(msg.content) && (
+                                  <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>
+                                    {msgSearch ? msg.content.split(new RegExp(`(${msgSearch})`, "gi")).map((part, idx) =>
+                                      part.toLowerCase() === msgSearch.toLowerCase()
+                                        ? <mark key={idx} style={{ background: "#fef08a", borderRadius: 2, padding: "0 1px" }}>{part}</mark> : part
+                                    ) : msg.content}
+                                    {msg.edited && <span style={{ fontSize: 10, opacity: 0.55, marginLeft: 6, fontStyle: "italic" }}>edited</span>}
+                                  </p>
+                                )}
+                                {/* ── Link previews ── */}
+                                {urls.slice(0, 1).map(url => (
+                                  <LinkPreviewCard key={url} url={url} mine={mine} />
                                 ))}
+                                {/* ── Voice note player ── */}
+                                {isAudio && fileUrl && (
+                                  <VoiceNotePlayer src={fileUrl} mine={mine} duration={msg.voiceDuration || 0} />
+                                )}
+                                {/* ── Image ── */}
+                                {isImg && fileUrl && (
+                                  <a href={fileUrl} target="_blank" rel="noreferrer">
+                                    <img src={fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: isMobile ? 180 : 240, maxHeight: 220, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0 }} />
+                                  </a>
+                                )}
+                                {/* ── File attachment ── */}
+                                {!isImg && !isAudio && fileUrl && (
+                                  <a href={fileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
+                                    <Download size={14} />
+                                    <div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{msg.fileName || "File"}</p><p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p></div>
+                                  </a>
+                                )}
+                              </div>
+
+                              {/* ── REACTIONS — inline below bubble ── */}
+                              {hasR && (
+                                <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: -8, paddingTop: 0, justifyContent: mine ? "flex-end" : "flex-start", position: "relative", zIndex: 2, paddingLeft: mine ? 0 : 6, paddingRight: mine ? 6 : 0 }}>
+                                  {Object.entries(reactions).map(([emoji, users]) => (
+                                    <span key={emoji}
+                                      onClick={() => addReaction(msg._id, emoji)}
+                                      onContextMenu={e => { e.preventDefault(); setReactSummary({ msgId: msg._id, reactions }); }}
+                                      onDoubleClick={() => setReactSummary({ msgId: msg._id, reactions })}
+                                      style={{ padding: "2px 7px", borderRadius: 20, background: users.includes(myId) ? "#dbeafe" : "var(--bg-card, #fff)", border: `1.5px solid ${users.includes(myId) ? "#93c5fd" : "rgba(0,0,0,0.12)"}`, cursor: "pointer", fontSize: 13, display: "inline-flex", alignItems: "center", gap: 3, boxShadow: "0 1px 4px rgba(0,0,0,0.12)", lineHeight: 1, userSelect: "none", whiteSpace: "nowrap", transition: "transform 0.1s" }}
+                                      onMouseEnter={e => e.currentTarget.style.transform = "scale(1.12)"}
+                                      onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+                                      {emoji}
+                                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, marginLeft: 1 }}>
+                                        {users.length > 1 ? users.length : ""}
+                                      </span>
+                                    </span>
+                                  ))}
+                                  {/* "See all" hint */}
+                                  <span onClick={() => setReactSummary({ msgId: msg._id, reactions })}
+                                    style={{ padding: "2px 6px", borderRadius: 20, background: "transparent", border: "1.5px dashed rgba(0,0,0,0.1)", cursor: "pointer", fontSize: 10, color: "var(--text-muted)", display: "inline-flex", alignItems: "center" }}>
+                                    <Eye size={10} />
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* ── Timestamp + read receipt ── */}
+                              <p style={{ margin: `${hasR ? "6px" : "2px"} 4px 0`, fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left", display: "flex", alignItems: "center", justifyContent: mine ? "flex-end" : "flex-start", gap: 3 }}>
+                                {msg.pending ? "Sending…" : fmt(msg.createdAt || Date.now())}
+                                {mine && !msg.pending && (
+                                  <span title={msg.read ? `Seen` : "Delivered"} style={{ display: "flex", alignItems: "center", cursor: "default" }}>
+                                    {msg.read
+                                      ? <CheckCheck size={11} style={{ color: "#3b82f6" }} />
+                                      : <Check size={11} />}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+
+                            {!msg.pending && (
+                              <div className="msg-actions" style={{ opacity: 0, display: "flex", alignItems: "center", flexDirection: mine ? "row" : "row-reverse" }}>
+                                <button onClick={(e) => { e.stopPropagation(); setMenuState({ msg, x: e.clientX, y: e.clientY }); }}
+                                  style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.9)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", backdropFilter: "blur(4px)" }}>
+                                  <MoreVertical size={13} style={{ color: "#64748b" }} />
+                                </button>
                               </div>
                             )}
 
-                            <p style={{ margin: `${hasR ? "6px" : "2px"} 4px 0`, fontSize: 10, color: "var(--text-muted)", textAlign: mine ? "right" : "left", display: "flex", alignItems: "center", justifyContent: mine ? "flex-end" : "flex-start", gap: 3 }}>
-                              {msg.pending ? "Sending…" : fmt(msg.createdAt || Date.now())}
-                              {mine && !msg.pending && (msg.read ? <CheckCheck size={11} style={{ color: "#3b82f6" }} /> : <Check size={11} />)}
-                            </p>
+                            {menuState?.msg._id === msg._id && (
+                              <MsgMenu msg={msg} isMine={mine} x={menuState.x} y={menuState.y}
+                                onDelete={(mode) => deleteMsg(msg._id, mode)}
+                                onEdit={() => { setEditing(msg); setText(msg.content); setTimeout(() => { inputRef.current?.focus(); autoResize(); }, 50); }}
+                                onReply={() => { setReplyTo(msg); setTimeout(() => inputRef.current?.focus(), 50); }}
+                                onReact={(emoji) => addReaction(msg._id, emoji)}
+                                onCopy={() => navigator.clipboard?.writeText(msg.content || "")}
+                                onStar={() => setStarred(p => { const n = new Set(p); n.has(msg._id) ? n.delete(msg._id) : n.add(msg._id); return n; })}
+                                onPin={() => { if (msg.pinned) { setMsgs(p => p.map(m => m._id === msg._id ? { ...m, pinned: false } : m)); if (pinnedMsg?.msg._id === msg._id) setPinnedMsg(null); setMenuState(null); } else { setPinTarget(msg); setMenuState(null); } }}
+                                onForward={() => { navigator.clipboard?.writeText(msg.content || ""); alert("Message copied — open another chat to forward."); }}
+                                onClose={() => setMenuState(null)}
+                              />
+                            )}
                           </div>
-
-                          {!msg.pending && (
-                            <div className="msg-actions" style={{ opacity: 0, display: "flex", alignItems: "center", flexDirection: mine ? "row" : "row-reverse" }}>
-                              <button onClick={(e) => { e.stopPropagation(); setMenuState({ msg, x: e.clientX, y: e.clientY }); }}
-                                style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.9)", border: "1px solid rgba(0,0,0,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 6px rgba(0,0,0,0.1)", backdropFilter: "blur(4px)" }}>
-                                <MoreVertical size={13} style={{ color: "#64748b" }} />
-                              </button>
-                            </div>
-                          )}
-
-                          {menuState?.msg._id === msg._id && (
-                            <MsgMenu msg={msg} isMine={mine} x={menuState.x} y={menuState.y}
-                              onDelete={(mode) => deleteMsg(msg._id, mode)}
-                              onEdit={() => { setEditing(msg); setText(msg.content); setTimeout(() => { inputRef.current?.focus(); autoResize(); }, 50); }}
-                              onReply={() => { setReplyTo(msg); setTimeout(() => inputRef.current?.focus(), 50); }}
-                              onReact={(emoji) => addReaction(msg._id, emoji)}
-                              onCopy={() => navigator.clipboard?.writeText(msg.content || "")}
-                              onStar={() => setStarred(p => { const n = new Set(p); n.has(msg._id) ? n.delete(msg._id) : n.add(msg._id); return n; })}
-                              onPin={() => { if (msg.pinned) { setMsgs(p => p.map(m => m._id === msg._id ? { ...m, pinned: false } : m)); if (pinnedMsg?.msg._id === msg._id) setPinnedMsg(null); setMenuState(null); } else { setPinTarget(msg); setMenuState(null); } }}
-                              onForward={() => { navigator.clipboard?.writeText(msg.content || ""); alert("Message copied — open another chat to forward."); }}
-                              onClose={() => setMenuState(null)}
-                            />
-                          )}
                         </div>
                       );
                     })}
