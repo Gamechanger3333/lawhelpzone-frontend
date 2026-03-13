@@ -1,4 +1,5 @@
 "use client";
+// v2026-03-13 06:02 — fixes: no-Attachment-text, reactions-plus-btn, voice-notes, audio-playback
 // app/dashboard/[role]/messages/page.jsx
 // ✅ Works for: admin/messages, lawyer/messages, client/messages
 // ✅ All registered users searchable in New Conversation (multi-endpoint)
@@ -909,7 +910,7 @@ function MessagesContent() {
                                 ? <a href={fileUrl} target="_blank" rel="noreferrer"><img src={fileUrl} alt={msg.fileName || "image"} style={{ maxWidth: isMobile ? 180 : 240, maxHeight: 220, borderRadius: 12, display: "block", objectFit: "cover", marginTop: msgContent ? 6 : 0 }} /></a>
                                 : <a href={fileUrl} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: msgContent ? 6 : 0 }}>
                                     <Download size={14} />
-                                    <div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{msg.fileName || "File"}</p><p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Download</p></div>
+                                    <div style={{ minWidth: 0 }}><p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 140 }}>{(!msg.fileName || ["Attachment","attachment","File","file"].includes(msg.fileName)) ? "📎 Download file" : msg.fileName}</p><p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Tap to open</p></div>
                                   </a>
                               )}
                             </div>
