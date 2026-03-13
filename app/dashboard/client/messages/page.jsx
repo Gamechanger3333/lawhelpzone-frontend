@@ -222,71 +222,113 @@ function VoiceNotePlayer({ src, mine, duration }) {
   const [playing, setPlaying]   = useState(false);
   const [progress, setProgress] = useState(0);
   const [elapsed, setElapsed]   = useState(0);
+  const [totalDur, setTotalDur] = useState(duration || 0);
   const audioRef                = useRef(null);
 
   const toggle = () => {
     if (!audioRef.current) return;
-    if (playing) { audioRef.current.pause(); }
-    else { audioRef.current.play().catch(() => {}); }
-    setPlaying(p => !p);
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else { audioRef.current.play().catch(() => {}); setPlaying(true); }
   };
 
   useEffect(() => {
     const audio = audioRef.current; if (!audio) return;
-    const onEnded    = () => { setPlaying(false); setProgress(0); setElapsed(0); };
+    const onEnded      = () => { setPlaying(false); setProgress(0); setElapsed(0); };
     const onTimeUpdate = () => {
-      if (!audio.duration) return;
+      if (!audio.duration || isNaN(audio.duration)) return;
       setProgress((audio.currentTime / audio.duration) * 100);
       setElapsed(audio.currentTime);
     };
-    audio.addEventListener("ended",      onEnded);
-    audio.addEventListener("timeupdate", onTimeUpdate);
-    return () => { audio.removeEventListener("ended", onEnded); audio.removeEventListener("timeupdate", onTimeUpdate); };
+    const onLoaded = () => {
+      if (audio.duration && !isNaN(audio.duration)) setTotalDur(audio.duration);
+    };
+    audio.addEventListener("ended",            onEnded);
+    audio.addEventListener("timeupdate",       onTimeUpdate);
+    audio.addEventListener("loadedmetadata",   onLoaded);
+    audio.addEventListener("durationchange",   onLoaded);
+    return () => {
+      audio.removeEventListener("ended",          onEnded);
+      audio.removeEventListener("timeupdate",     onTimeUpdate);
+      audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("durationchange", onLoaded);
+    };
   }, []);
 
-  const totalSec = duration || 0;
-  const trackColor = mine ? "rgba(255,255,255,0.35)" : "#e2e8f0";
+  const fmt = (s) => {
+    const m = Math.floor((s || 0) / 60), sec = Math.floor((s || 0) % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
   const fillColor  = mine ? "#fff" : "#3b82f6";
+  const trackColor = mine ? "rgba(255,255,255,0.3)" : "#dde6f0";
+  const timeColor  = mine ? "rgba(255,255,255,0.75)" : "#64748b";
+
+  /* Fake waveform bars — 28 bars with pseudo-random heights */
+  const BARS = 28;
+  const barHeights = Array.from({ length: BARS }, (_, i) =>
+    30 + Math.abs(Math.sin(i * 1.7 + 0.5) * 55 + Math.cos(i * 0.9) * 25)
+  );
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", minWidth: 200 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0", minWidth: 220, maxWidth: 280 }}>
       <audio ref={audioRef} src={src} preload="metadata" />
+
+      {/* Play / Pause button */}
       <button onClick={toggle}
-        style={{ width: 34, height: 34, borderRadius: "50%", background: mine ? "rgba(255,255,255,0.25)" : "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.1s" }}
+        style={{ width: 38, height: 38, borderRadius: "50%", background: mine ? "rgba(255,255,255,0.25)" : "#eff6ff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "transform 0.1s" }}
         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
         {playing
-          ? <Pause size={14} style={{ color: mine ? "#fff" : "#3b82f6" }} />
-          : <Play  size={14} style={{ color: mine ? "#fff" : "#3b82f6", marginLeft: 1 }} />}
+          ? <Pause size={15} style={{ color: mine ? "#fff" : "#3b82f6" }} />
+          : <Play  size={15} style={{ color: mine ? "#fff" : "#3b82f6", marginLeft: 2 }} />}
       </button>
+
+      {/* Waveform + time */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-        {/* Progress bar */}
-        <div style={{ position: "relative", height: 3, borderRadius: 3, background: trackColor, cursor: "pointer" }}
+        {/* Waveform bars (clickable seek) */}
+        <div style={{ display: "flex", alignItems: "center", gap: 1.5, height: 28, cursor: "pointer" }}
           onClick={e => {
             if (!audioRef.current?.duration) return;
             const rect = e.currentTarget.getBoundingClientRect();
             const ratio = (e.clientX - rect.left) / rect.width;
             audioRef.current.currentTime = ratio * audioRef.current.duration;
           }}>
-          <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: `${progress}%`, background: fillColor, borderRadius: 3, transition: "width 0.1s" }} />
+          {barHeights.map((h, i) => {
+            const pct = i / BARS * 100;
+            const filled = pct <= progress;
+            return (
+              <div key={i} style={{
+                flex: 1, height: `${h}%`, maxHeight: 26,
+                borderRadius: 2,
+                background: filled ? fillColor : trackColor,
+                transition: "background 0.1s",
+                minWidth: 2,
+              }} />
+            );
+          })}
         </div>
-        <span style={{ fontSize: 10, color: mine ? "rgba(255,255,255,0.75)" : "#94a3b8" }}>
-          {playing || elapsed > 0 ? fmtDuration(elapsed) : fmtDuration(totalSec)}
+        {/* Elapsed / total */}
+        <span style={{ fontSize: 10, color: timeColor, fontWeight: 500 }}>
+          {playing || elapsed > 0 ? fmt(elapsed) : fmt(totalDur)}
         </span>
       </div>
-      <span style={{ fontSize: 16 }}>🎤</span>
+
+      {/* Mic icon */}
+      <Mic size={14} style={{ color: mine ? "rgba(255,255,255,0.6)" : "#94a3b8", flexShrink: 0 }} />
     </div>
   );
 }
 
 // ── Message Context Menu ──────────────────────────────────────────────────────
-function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onStar, onPin, onClose, x, y }) {
+function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onStar, onPin, onForward, onClose, x, y }) {
   const ref                             = useRef(null);
   const [showAllEmoji, setShowAllEmoji] = useState(false);
   const [emojiSearch, setEmojiSearch]   = useState("");
   const [activeEmojiCat, setActiveEmojiCat] = useState(Object.keys(EMOJI_CATS)[0]);
+  const [showInfo, setShowInfo]         = useState(false);
   const editExpired           = !canEdit(msg);
   const deleteEveryoneExpired = !canDeleteForEveryone(msg);
+  const hasFile = !!msg.fileUrl;
 
   useEffect(() => {
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
@@ -294,27 +336,96 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
     return () => document.removeEventListener("mousedown", h);
   }, [onClose]);
 
-  const menuW = showAllEmoji ? 320 : 240;
-  const menuH = showAllEmoji ? 440 : 340;
+  const menuW = showAllEmoji ? 320 : 260;
+  const menuH = showAllEmoji ? 460 : "auto";
   const safeX = typeof window !== "undefined" ? Math.min(x, window.innerWidth  - menuW - 12) : x;
-  const safeY = typeof window !== "undefined" ? Math.min(y, window.innerHeight - menuH - 12) : y;
+  const safeY = typeof window !== "undefined" ? Math.min(y, window.innerHeight - (showAllEmoji ? 460 : 480) - 12) : y;
 
-  const BG    = "#ffffff"; const BORDER = "#eef2f7"; const HOVER = "#f1f5f9";
-  const TXT   = "#0f172a"; const MUTED  = "#64748b"; const DIM   = "#b8c4cf";
+  const BG    = "var(--header-bg,#ffffff)";
+  const BORDER= "var(--border-color,#eef2f7)";
+  const HOVER = "var(--conv-hover,#f1f5f9)";
+  const TXT   = "var(--text-heading,#0f172a)";
+  const MUTED = "var(--text-muted,#64748b)";
+  const DIM   = "#b8c4cf";
   const RED   = "#ef4444";
 
-  const item = (icon, label, action, color = TXT, disabled = false) => (
-    <button onClick={() => { if (!disabled) { action(); onClose(); } }}
-      style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 16px", border: "none", background: "transparent", cursor: disabled ? "not-allowed" : "pointer", fontSize: 13.5, color: disabled ? DIM : color, fontWeight: 500, textAlign: "left", transition: "background 0.12s" }}
+  const item = (icon, label, action, color = TXT, disabled = false, rightIcon = null) => (
+    <button onClick={() => { if (!disabled) { action(); } }}
+      style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "11px 16px", border: "none", background: "transparent", cursor: disabled ? "not-allowed" : "pointer", fontSize: 14, color: disabled ? DIM : color, fontWeight: 400, textAlign: "left", transition: "background 0.12s" }}
       onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = HOVER; }}
       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
-      <span style={{ display: "flex", opacity: disabled ? 0.35 : 1, color: disabled ? DIM : color }}>{icon}</span>
+      <span style={{ display: "flex", width: 20, justifyContent: "center", opacity: disabled ? 0.35 : 1, color: disabled ? DIM : color, flexShrink: 0 }}>{icon}</span>
       <span style={{ flex: 1, color: disabled ? DIM : color }}>{label}</span>
+      {rightIcon}
       {disabled && <AlertCircle size={11} style={{ color: DIM, flexShrink: 0 }} />}
     </button>
   );
 
-  const displayEmojis = emojiSearch ? Object.values(EMOJI_CATS).flat() : EMOJI_CATS[activeEmojiCat] || [];
+  const Divider = () => <div style={{ height: 1, background: BORDER, margin: "2px 0" }} />;
+
+  const displayEmojis = emojiSearch
+    ? Object.values(EMOJI_CATS).flat().filter(e => e.includes(emojiSearch))
+    : EMOJI_CATS[activeEmojiCat] || [];
+
+  // ── Save as (download) ──
+  const handleSaveAs = () => {
+    if (!msg.fileUrl) return;
+    const a = document.createElement("a");
+    a.href = fixUrl(msg.fileUrl) || msg.fileUrl;
+    a.download = msg.fileName || "file";
+    a.target = "_blank";
+    a.click();
+    onClose();
+  };
+
+  // ── Share via Web Share API ──
+  const handleShare = async () => {
+    const text = msg.content || (msg.fileUrl ? "📎 File" : "");
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch {}
+    } else {
+      await navigator.clipboard?.writeText(text);
+      alert("Copied to clipboard (share not supported on this browser)");
+    }
+    onClose();
+  };
+
+  // ── Message info panel ──
+  if (showInfo) {
+    const sentAt = msg.createdAt ? new Date(msg.createdAt).toLocaleString() : "Unknown";
+    return (
+      <div ref={ref} style={{ position: "fixed", left: safeX, top: safeY, zIndex: 9999, background: BG, borderRadius: 18, boxShadow: "0 16px 56px rgba(0,0,0,0.22)", border: `1px solid ${BORDER}`, width: 260, overflow: "hidden", animation: "popIn 0.15s ease" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 14px 10px", borderBottom: `1px solid ${BORDER}` }}>
+          <button onClick={() => setShowInfo(false)} style={{ background: HOVER, border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: TXT, fontSize: 16, flexShrink: 0 }}>‹</button>
+          <span style={{ fontWeight: 700, fontSize: 14, color: TXT }}>Message info</span>
+        </div>
+        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: MUTED }}>Sent</span>
+            <span style={{ fontSize: 12, color: TXT, fontWeight: 500 }}>{sentAt}</span>
+          </div>
+          {msg.edited && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: MUTED }}>Edited</span>
+              <span style={{ fontSize: 12, color: TXT, fontWeight: 500 }}>Yes</span>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12, color: MUTED }}>Status</span>
+            <span style={{ fontSize: 12, color: "#3b82f6", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+              {msg.read ? <><CheckCheck size={13} /> Read</> : <><Check size={13} /> Delivered</>}
+            </span>
+          </div>
+          {msg.type && msg.type !== "text" && (
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: MUTED }}>Type</span>
+              <span style={{ fontSize: 12, color: TXT, fontWeight: 500, textTransform: "capitalize" }}>{msg.type}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} style={{
@@ -327,59 +438,81 @@ function MsgMenu({ msg, isMine, onDelete, onEdit, onReply, onReact, onCopy, onSt
       animation: "popIn 0.15s ease", transition: "width 0.2s ease, height 0.2s ease"
     }}>
       {showAllEmoji ? (
+        /* ── Full emoji picker ── */
         <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px 8px", borderBottom: `1px solid ${BORDER}` }}>
             <button onClick={() => { setShowAllEmoji(false); setEmojiSearch(""); }}
-              style={{ background: HOVER, border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: TXT, fontSize: 14 }}>‹</button>
-            <input value={emojiSearch} onChange={e => setEmojiSearch(e.target.value)} placeholder="Search emoji…" autoFocus
-              style={{ flex: 1, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "5px 10px", fontSize: 12.5, outline: "none", background: "#f8fafc", color: TXT }} />
+              style={{ background: HOVER, border: "none", borderRadius: 8, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: TXT, fontSize: 16 }}>‹</button>
+            <input value={emojiSearch} onChange={e => setEmojiSearch(e.target.value)} placeholder="Search reaction…" autoFocus
+              style={{ flex: 1, border: `1.5px solid #3b82f6`, borderRadius: 20, padding: "5px 12px", fontSize: 13, outline: "none", background: "var(--input-bg,#f8fafc)", color: TXT }} />
           </div>
           {!emojiSearch && (
             <div style={{ display: "flex", overflowX: "auto", padding: "6px 8px 4px", gap: 2, scrollbarWidth: "none", borderBottom: `1px solid ${BORDER}` }}>
               {Object.keys(EMOJI_CATS).map(cat => (
                 <button key={cat} onClick={() => setActiveEmojiCat(cat)} title={cat}
-                  style={{ flexShrink: 0, width: 32, height: 30, borderRadius: 8, border: "none", background: activeEmojiCat === cat ? HOVER : "transparent", fontSize: 18, cursor: "pointer", transition: "background 0.12s", display: "flex", alignItems: "center", justifyContent: "center", outline: activeEmojiCat === cat ? `2px solid #3b82f6` : "none" }}>
+                  style={{ flexShrink: 0, width: 34, height: 30, borderRadius: 8, border: "none", background: activeEmojiCat === cat ? HOVER : "transparent", fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", borderBottom: activeEmojiCat === cat ? "2px solid #3b82f6" : "2px solid transparent" }}>
                   {cat.split(" ")[0]}
                 </button>
               ))}
             </div>
           )}
-          <div style={{ flex: 1, overflowY: "auto", padding: "6px 8px", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
+          {!emojiSearch && (
+            <div style={{ padding: "6px 12px 2px" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {activeEmojiCat}
+              </span>
+            </div>
+          )}
+          <div style={{ flex: 1, overflowY: "auto", padding: "4px 8px 8px", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 2 }}>
             {displayEmojis.map((e, i) => (
               <button key={`${e}-${i}`} onClick={() => { onReact(e); onClose(); }}
-                style={{ width: "100%", aspectRatio: "1", border: "none", background: "transparent", fontSize: 20, cursor: "pointer", borderRadius: 8, transition: "background 0.1s, transform 0.1s", display: "flex", alignItems: "center", justifyContent: "center" }}
+                style={{ width: "100%", aspectRatio: "1", border: "none", background: "transparent", fontSize: 22, cursor: "pointer", borderRadius: 8, transition: "background 0.1s, transform 0.1s", display: "flex", alignItems: "center", justifyContent: "center" }}
                 onMouseEnter={ev => { ev.currentTarget.style.background = HOVER; ev.currentTarget.style.transform = "scale(1.3)"; }}
                 onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.transform = "scale(1)"; }}>
                 {e}
               </button>
             ))}
+            {displayEmojis.length === 0 && <span style={{ gridColumn: "1/-1", padding: "12px 0", textAlign: "center", fontSize: 13, color: MUTED }}>No emoji found</span>}
           </div>
         </div>
       ) : (
+        /* ── Main menu ── */
         <>
+          {/* Quick reactions row */}
           <div style={{ display: "flex", alignItems: "center", padding: "10px 8px 8px", borderBottom: `1px solid ${BORDER}`, gap: 2 }}>
             <div style={{ display: "flex", overflowX: "auto", flex: 1, gap: 1, scrollbarWidth: "none" }}>
-              {QUICK_REACTIONS.map(r => (
+              {QUICK_REACTIONS.slice(0, 6).map(r => (
                 <button key={r} onClick={() => { onReact(r); onClose(); }}
-                  style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, border: "none", background: "transparent", fontSize: 20, cursor: "pointer", transition: "transform 0.12s, background 0.12s", display: "flex", alignItems: "center", justifyContent: "center" }}
-                  onMouseEnter={ev => { ev.currentTarget.style.transform = "scale(1.4)"; ev.currentTarget.style.background = HOVER; }}
+                  style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, border: "none", background: "transparent", fontSize: 22, cursor: "pointer", transition: "transform 0.12s, background 0.12s", display: "flex", alignItems: "center", justifyContent: "center" }}
+                  onMouseEnter={ev => { ev.currentTarget.style.transform = "scale(1.45)"; ev.currentTarget.style.background = HOVER; }}
                   onMouseLeave={ev => { ev.currentTarget.style.transform = "scale(1)"; ev.currentTarget.style.background = "transparent"; }}>
                   {r}
                 </button>
               ))}
             </div>
             <button onClick={() => setShowAllEmoji(true)}
-              style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, border: `1.5px solid ${BORDER}`, background: HOVER, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: MUTED, fontWeight: 700, marginLeft: 2 }}
+              style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, border: `1.5px solid ${BORDER}`, background: HOVER, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: MUTED, fontWeight: 700, marginLeft: 2 }}
               title="All reactions">+</button>
           </div>
-          {item(<Reply  size={15} />, "Reply",                               onReply,       TXT)}
-          {item(<Copy   size={15} />, "Copy",                                onCopy,        TXT)}
-          {item(<Star   size={15} />, "Star message",                        onStar,        TXT)}
-          {item(<span style={{ fontSize: 14 }}>📌</span>, msg.pinned ? "Unpin message" : "Pin message", onPin, TXT)}
-          {isMine && item(<Edit2 size={15} />, editExpired ? "Edit (expired — 15 min)" : "Edit", onEdit, editExpired ? MUTED : TXT, editExpired)}
-          <div style={{ height: 1, background: BORDER, margin: "4px 0" }} />
-          {item(<Trash2 size={15} />, "Delete for me", () => onDelete("me"), RED)}
-          {isMine && item(<Trash2 size={15} />, deleteEveryoneExpired ? "Delete for everyone (expired)" : "Delete for everyone", () => onDelete("everyone"), RED, deleteEveryoneExpired)}
+
+          {/* Menu items — matching WhatsApp order */}
+          {item(<span style={{ fontSize: 15 }}>ℹ️</span>, "Message info", () => { setShowInfo(true); })}
+          {item(<Reply size={15} />, "Reply", () => { onReply(); onClose(); })}
+          {item(<Copy  size={15} />, "Copy",  () => { onCopy();  onClose(); })}
+          {item(<span style={{ fontSize: 15 }}>↗️</span>, "Forward", () => { onForward?.(); onClose(); })}
+          {item(<span style={{ fontSize: 14 }}>📌</span>, msg.pinned ? "Unpin" : "Pin", () => { onPin(); onClose(); })}
+          {item(<Star  size={15} />, "Star message", () => { onStar(); onClose(); })}
+
+          <Divider />
+
+          {hasFile && item(<Download size={15} />, "Save as", handleSaveAs)}
+          {item(<span style={{ fontSize: 15 }}>↗</span>, "Share", handleShare)}
+          {isMine && item(<Edit2 size={15} />, editExpired ? "Edit (expired)" : "Edit", () => { onEdit(); onClose(); }, editExpired ? MUTED : TXT, editExpired)}
+
+          <Divider />
+
+          {item(<Trash2 size={15} />, "Delete for me",        () => { onDelete("me");       onClose(); }, RED)}
+          {isMine && item(<Trash2 size={15} />, deleteEveryoneExpired ? "Delete for everyone (expired)" : "Delete for everyone", () => { onDelete("everyone"); onClose(); }, RED, deleteEveryoneExpired)}
         </>
       )}
     </div>
@@ -868,7 +1001,7 @@ function MessagesContent() {
                   <span style={{ fontSize: 16, flexShrink: 0 }}>📌</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#3b82f6" }}>Pinned Message</p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pinnedMsg.msg.content || "📎 Attachment"}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pinnedMsg.msg.content || (pinnedMsg.msg.type === "audio" ? "🎤 Voice note" : pinnedMsg.msg.fileUrl ? "📎 File" : "")}</p>
                   </div>
                   <button onClick={e => { e.stopPropagation(); setPinnedMsg(null); setMsgs(p => p.map(m => ({ ...m, pinned: false }))); }}
                     style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", padding: 4, flexShrink: 0 }}>
@@ -929,14 +1062,14 @@ function MessagesContent() {
                           <div style={{ maxWidth: isMobile ? "83%" : "65%", display: "flex", flexDirection: "column" }}>
                             {msg.replyTo && (
                               <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
-                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || "Attachment"}</p>
+                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || (msg.replyTo.type === "audio" ? "🎤 Voice note" : msg.replyTo.fileUrl ? "📎 File" : "")}</p>
                               </div>
                             )}
 
                             <div className="msg-b" style={{ padding: isImg ? 4 : isAudio ? "10px 14px" : "9px 13px", borderRadius: msg.replyTo ? (mine ? "0 14px 4px 14px" : "14px 0 14px 4px") : (mine ? "18px 18px 4px 18px" : "4px 18px 18px 18px"), background: mine ? "#3b82f6" : "var(--bubble-other-bg)", color: mine ? "#fff" : "var(--bubble-other-color)", border: mine ? "none" : "1px solid var(--border-color)", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", opacity: msg.pending ? 0.65 : 1 }}>
                               {msg.pinned && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.8, color: mine ? "rgba(255,255,255,0.8)" : "#3b82f6" }}>📌 Pinned</span>}
                               {isStarred  && <span style={{ fontSize: 10, marginBottom: 3, display: "block", opacity: 0.7 }}>⭐ starred</span>}
-                              {msg.content && (
+                              {msg.content && !["📎 File", "📎 Attachment", "Attachment", "🎤 Voice note"].includes(msg.content) && (
                                 <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>
                                   {msgSearch ? msg.content.split(new RegExp(`(${msgSearch})`, "gi")).map((part, idx) =>
                                     part.toLowerCase() === msgSearch.toLowerCase()
@@ -1002,6 +1135,7 @@ function MessagesContent() {
                               onCopy={() => navigator.clipboard?.writeText(msg.content || "")}
                               onStar={() => setStarred(p => { const n = new Set(p); n.has(msg._id) ? n.delete(msg._id) : n.add(msg._id); return n; })}
                               onPin={() => { if (msg.pinned) { setMsgs(p => p.map(m => m._id === msg._id ? { ...m, pinned: false } : m)); if (pinnedMsg?.msg._id === msg._id) setPinnedMsg(null); setMenuState(null); } else { setPinTarget(msg); setMenuState(null); } }}
+                              onForward={() => { navigator.clipboard?.writeText(msg.content || ""); alert("Message copied — open another chat to forward."); }}
                               onClose={() => setMenuState(null)}
                             />
                           )}
@@ -1029,7 +1163,7 @@ function MessagesContent() {
                     <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: editingMsg ? "#d97706" : "#3b82f6" }}>
                       {editingMsg ? "✏️ Editing · expires in 15 min" : `↩ Replying to ${activeInfo?.name || "message"}`}
                     </p>
-                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(editingMsg || replyTo)?.content || "Attachment"}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{(editingMsg || replyTo)?.content || ((editingMsg || replyTo)?.type === "audio" ? "🎤 Voice note" : (editingMsg || replyTo)?.fileUrl ? "📎 File" : "")}</p>
                   </div>
                   <button onClick={cancelAction} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16} /></button>
                 </div>
