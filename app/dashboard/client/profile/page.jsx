@@ -1,442 +1,497 @@
 "use client";
 // ══════════════════════════════════════════════════════════════════════════════
-// PROFILE PAGE — works for admin / client / lawyer  (auto-detects role)
-// Place at:  app/dashboard/[role]/profile/page.jsx  (same file for all 3)
+// PROFILE PAGE — app/dashboard/[role]/profile/page.jsx
+// Fully functional: loads via GET /api/auth/me, saves via PUT /api/auth/profile
+// Avatar upload via POST /api/upload. Save/Reset per section.
+// Theme-aware via CSS variables.
 // ══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
-import { useAppSelector, useAppDispatch } from "../../../../store/index";
-import { updateProfile } from "../../../../store/slices/authSlice";
+import { useAppSelector, useAppDispatch } from "@/store/index"
+import {
+  User, Briefcase, Lock, Camera, Save, RotateCcw,
+  CheckCircle, AlertTriangle, X, Eye, EyeOff,
+  MapPin, Phone, Mail, Globe, Linkedin, BookOpen,
+  Star, Award, Languages, Scale, Shield,
+} from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
+const HJ  = () => ({ "Content-Type": "application/json", ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
 const H   = () => ({ ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
-const HJ  = () => ({ "Content-Type": "application/json", ...H() });
 
-const SPECS = ["Criminal Law","Family Law","Corporate Law","Property Law","Immigration Law","Tax Law","Labour Law","Civil Litigation","Intellectual Property","Banking & Finance Law","Constitutional Law","International Law","Environmental Law","Insurance Law","Medical / Health Law","Cyber Law","Human Rights Law","Arbitration & ADR"];
-const LANGS = ["English","Urdu","Punjabi","Sindhi","Pashto","Balochi","Arabic","French"];
-const COURTS= ["Supreme Court of Pakistan","Lahore High Court","Sindh High Court","Peshawar High Court","Balochistan High Court","Federal Shariat Court","District & Sessions Courts","Special Courts"];
-const LEGAL_NEEDS = ["Property Dispute","Family Law / Divorce","Criminal Defense","Business / Contract Law","Labour / Employment","Immigration / Visa","Intellectual Property","Tax Matter","Cyber Crime","Other"];
-
+/* ── Toast ──────────────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, []);
-  const ok = type !== "error";
   return (
-    <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, minWidth: 260, borderRadius: 14, padding: "14px 20px", fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 10, boxShadow: "0 8px 32px rgba(0,0,0,0.15)", animation: "tp 0.3s ease", background: ok ? "#f0fdf4" : "#fef2f2", border: `1px solid ${ok ? "#86efac" : "#fca5a5"}`, color: ok ? "#16a34a" : "#dc2626" }}>
-      <span style={{ fontSize: 18 }}>{ok ? "✓" : "✕"}</span>{msg}
-      <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", opacity: 0.5, fontSize: 18 }}>×</button>
+    <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, borderRadius: 12, padding: "12px 18px", fontSize: 14, fontWeight: 600, boxShadow: "0 8px 32px rgba(0,0,0,0.12)", display: "flex", alignItems: "center", gap: 8, animation: "fd 0.3s ease", background: type === "error" ? "#fef2f2" : "#f0fdf4", border: `1px solid ${type === "error" ? "#fca5a5" : "#86efac"}`, color: type === "error" ? "#dc2626" : "#16a34a" }}>
+      {type === "error" ? <AlertTriangle size={16} /> : <CheckCircle size={16} />}{msg}
+      <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", marginLeft: 4, opacity: 0.5 }}><X size={13} /></button>
     </div>
   );
 }
 
-function Section({ title, icon, children }) {
+/* ── Input field ────────────────────────────────────────────────────── */
+function Field({ label, value, onChange, type = "text", placeholder, icon: Icon, readOnly, span = 1 }) {
+  const [show, setShow] = useState(false);
   return (
-    <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border,#f1f5f9)", padding: "22px 24px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-      <h3 style={{ margin: "0 0 18px", fontSize: 15, fontWeight: 800, color: "var(--text-h,#0f172a)", display: "flex", alignItems: "center", gap: 8 }}>
-        <span>{icon}</span> {title}
-      </h3>
-      {children}
-    </div>
-  );
-}
-
-function Field({ label, hint, children }) {
-  return (
-    <div style={{ marginBottom: 16 }}>
-      <label style={{ display: "block", fontSize: 12, fontWeight: 700, color: "var(--label,#64748b)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</label>
-      {children}
-      {hint && <p style={{ margin: "4px 0 0", fontSize: 11, color: "#94a3b8" }}>{hint}</p>}
-    </div>
-  );
-}
-
-function Inp({ value, onChange, placeholder, type = "text", disabled = false }) {
-  return (
-    <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
-      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border,#e2e8f0)", fontSize: 14, outline: "none", background: disabled ? "var(--disabled-bg,#f8fafc)" : "var(--input-bg,#fff)", color: disabled ? "#94a3b8" : "var(--text,#0f172a)", boxSizing: "border-box", transition: "border-color 0.15s" }}
-      onFocus={e => !disabled && (e.target.style.borderColor = "#3b82f6")}
-      onBlur={e => e.target.style.borderColor = "var(--border,#e2e8f0)"}
-    />
-  );
-}
-
-function Txt({ value, onChange, placeholder, rows = 3 }) {
-  return (
-    <textarea value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-      style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border,#e2e8f0)", fontSize: 14, outline: "none", resize: "vertical", lineHeight: 1.6, boxSizing: "border-box", background: "var(--input-bg,#fff)", color: "var(--text,#0f172a)", transition: "border-color 0.15s" }}
-      onFocus={e => (e.target.style.borderColor = "#3b82f6")}
-      onBlur={e => e.target.style.borderColor = "var(--border,#e2e8f0)"}
-    />
-  );
-}
-
-function Toggle({ value, onChange, label }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <button onClick={() => onChange(!value)}
-        style={{ width: 48, height: 26, borderRadius: 13, background: value ? "#10b981" : "#e2e8f0", border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
-        <span style={{ position: "absolute", top: 3, left: value ? 25 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.15)" }} />
-      </button>
-      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text,#0f172a)" }}>{label}</span>
-      {value && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#f0fdf4", color: "#10b981" }}>Active</span>}
-    </div>
-  );
-}
-
-function TagSelector({ tags, selected, onChange, color = "#3b82f6", bg = "#eff6ff" }) {
-  const toggle = (t) => onChange(selected.includes(t) ? selected.filter(x => x !== t) : [...selected, t]);
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-      {tags.map(t => (
-        <button key={t} onClick={() => toggle(t)}
-          style={{ padding: "6px 13px", borderRadius: 20, border: `1px solid ${selected.includes(t) ? color : "var(--border,#e2e8f0)"}`, background: selected.includes(t) ? bg : "transparent", color: selected.includes(t) ? color : "var(--text-muted,#64748b)", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s" }}>
-          {selected.includes(t) && "✓ "}{t}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-export default function ProfilePage() {
-  const dispatch = useAppDispatch();
-  const { user, profile } = useAppSelector((s) => s.auth);
-  const role = user?.role || profile?.role || "client";
-
-  const [ready,    setReady]   = useState(false);
-  const [saving,   setSaving]  = useState(false);
-  const [toast,    setToast]   = useState(null);
-  const [imgPrev,  setImgPrev] = useState(null);
-  const [uploading,setUpl]     = useState(false);
-  const fileRef = useRef(null);
-
-  // ── common fields ──────────────────────────────────────────────
-  const [name,        setName]        = useState("");
-  const [phone,       setPhone]       = useState("");
-  const [bio,         setBio]         = useState("");
-  const [city,        setCity]        = useState("");
-  const [country,     setCountry]     = useState("Pakistan");
-  const [dob,         setDob]         = useState("");
-  const [gender,      setGender]      = useState("");
-  const [cnic,        setCnic]        = useState("");
-
-  // ── lawyer fields ──────────────────────────────────────────────
-  const [specs,       setSpecs]       = useState([]);
-  const [barNo,       setBarNo]       = useState("");
-  const [experience,  setExp]         = useState("");
-  const [rate,        setRate]        = useState("");
-  const [langs,       setLangs]       = useState([]);
-  const [education,   setEdu]         = useState("");
-  const [university,  setUni]         = useState("");
-  const [gradYear,    setGradYear]    = useState("");
-  const [courts,      setCourts]      = useState([]);
-  const [available,   setAvail]       = useState(true);
-  const [firm,        setFirm]        = useState("");
-  const [firmAddress, setFirmAddr]    = useState("");
-  const [linkedIn,    setLinkedIn]    = useState("");
-  const [awards,      setAwards]      = useState("");
-  const [publications,setPubs]        = useState("");
-  const [consultFee,  setConsultFee]  = useState("");
-
-  // ── client fields ──────────────────────────────────────────────
-  const [legalNeeds,  setNeeds]       = useState([]);
-  const [prefLang,    setPLang]       = useState("English");
-  const [occupation,  setOccupation]  = useState("");
-  const [emergency,   setEmergency]   = useState("");
-  const [caseNotes,   setCaseNotes]   = useState("");
-
-  // ── admin fields ───────────────────────────────────────────────
-  const [department,  setDept]        = useState("");
-  const [empId,       setEmpId]       = useState("");
-  const [supervisor,  setSupervisor]  = useState("");
-
-  /* ── load full profile from backend ──────────────────────────── */
-  const loadProfile = async () => {
-    if (!user) { setTimeout(() => setReady(true), 800); return; }
-    try {
-      const r = await fetch(`${API}/api/auth/me`, { credentials: "include", headers: HJ() });
-      if (!r.ok) throw new Error();
-      const d = await r.json();
-      const u = d.user || d;
-
-      setName(u.name || ""); setPhone(u.phone || u.phoneNumber || ""); setBio(u.bio || "");
-      setCity(u.city || u.location || ""); setCountry(u.country || "Pakistan");
-      setDob(u.dateOfBirth ? u.dateOfBirth.slice(0, 10) : "");
-      setGender(u.gender || ""); setCnic(u.cnic || u.nationalId || "");
-      setImgPrev(u.profileImage || null);
-
-      if (u.role === "lawyer") {
-        const lp = u.lawyerProfile || {};
-        setSpecs(lp.specializations || []); setBarNo(lp.barNumber || "");
-        setExp(lp.yearsOfExperience || ""); setRate(lp.hourlyRate || "");
-        setLangs(lp.languages || []); setEdu(lp.education || "");
-        setUni(lp.university || ""); setGradYear(lp.graduationYear || "");
-        setCourts(lp.courts || []); setAvail(lp.isAvailable !== false);
-        setFirm(lp.firmName || ""); setFirmAddr(lp.firmAddress || "");
-        setLinkedIn(u.linkedIn || lp.linkedIn || "");
-        setAwards(lp.awards || ""); setPubs(lp.publications || "");
-        setConsultFee(lp.consultationFee || "");
-      }
-      if (u.role === "client") {
-        setNeeds(u.legalNeeds || []); setPLang(u.preferredLanguage || "English");
-        setOccupation(u.occupation || ""); setEmergency(u.emergencyContact || "");
-        setCaseNotes(u.caseNotes || "");
-      }
-      if (u.role === "admin") {
-        setDept(u.department || ""); setEmpId(u.employeeId || "");
-        setSupervisor(u.supervisor || "");
-      }
-    } catch {}
-    finally { setTimeout(() => setReady(true), 80); }
-  };
-
-  useEffect(() => { loadProfile(); }, [user?._id]);
-
-  /* ── upload avatar ────────────────────────────────────────────── */
-  const handleAvatar = async (e) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    e.target.value = "";
-    setUpl(true);
-    try {
-      const fd = new FormData(); fd.append("file", file);
-      const r  = await fetch(`${API}/api/upload`, { method: "POST", headers: H(), body: fd, credentials: "include" });
-      if (r.ok) { const d = await r.json(); setImgPrev(d.url || d.fileUrl); }
-    } catch {} finally { setUpl(false); }
-  };
-
-  /* ── save ─────────────────────────────────────────────────────── */
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const body = { name, phone, bio, city, country, dateOfBirth: dob, gender, cnic, profileImage: imgPrev };
-      if (role === "lawyer") {
-        body.lawyerProfile = {
-          specializations: specs, barNumber: barNo, yearsOfExperience: Number(experience) || 0,
-          hourlyRate: Number(rate) || 0, languages: langs, education, university, graduationYear: gradYear,
-          courts, isAvailable: available, firmName: firm, firmAddress, linkedIn, awards, publications,
-          consultationFee: Number(consultFee) || 0,
-        };
-      }
-      if (role === "client") {
-        body.legalNeeds = legalNeeds; body.preferredLanguage = prefLang;
-        body.occupation = occupation; body.emergencyContact = emergency; body.caseNotes = caseNotes;
-      }
-      if (role === "admin") {
-        body.department = department; body.employeeId = empId; body.supervisor = supervisor;
-      }
-
-      // try Redux dispatch first, fallback to direct API
-      try {
-        await dispatch(updateProfile(body)).unwrap();
-      } catch {
-        const r = await fetch(`${API}/api/auth/update-profile`, { method: "PUT", credentials: "include", headers: HJ(), body: JSON.stringify(body) });
-        if (!r.ok) throw new Error("Failed");
-      }
-      setToast({ msg: "Profile saved successfully! ✓", type: "success" });
-    } catch {
-      setToast({ msg: "Failed to save — check connection", type: "error" });
-    } finally { setSaving(false); }
-  };
-
-  const roleColor = { admin: "#ef4444", lawyer: "#10b981", client: "#3b82f6" }[role] || "#6366f1";
-  const roleBg    = { admin: "#fef2f2", lawyer: "#f0fdf4", client: "#eff6ff" }[role] || "#f0f9ff";
-  const roleLabel = { admin: "Administrator", lawyer: "Legal Counsel", client: "Client" }[role] || role;
-
-  if (!ready) return (
-    <div style={{ display: "flex", justifyContent: "center", padding: "80px 0" }}>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ width: 36, height: 36, border: "3px solid var(--border,#e2e8f0)", borderTopColor: roleColor, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-    </div>
-  );
-
-  return (
-    <div style={{ maxWidth: 760, margin: "0 auto" }}>
-      <style>{`
-        @keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes tp{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-      `}</style>
-      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
-
-      <div style={{ opacity: ready ? 1 : 0, transition: "opacity 0.4s", animation: "fd 0.4s ease" }}>
-        {/* ── Profile header card ──────────────────────────────── */}
-        <div style={{ background: "var(--card-bg,#fff)", borderRadius: 24, border: "1px solid var(--border,#f1f5f9)", padding: "24px 28px", marginBottom: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.05)", display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          {/* avatar */}
-          <div style={{ position: "relative", flexShrink: 0 }}>
-            <div onClick={() => fileRef.current?.click()} title="Click to change photo"
-              style={{ width: 90, height: 90, borderRadius: "50%", overflow: "hidden", background: roleColor, color: "#fff", fontSize: 32, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", border: `3px solid ${roleColor}`, position: "relative" }}>
-              {imgPrev ? <img src={imgPrev} style={{ width: 90, height: 90, objectFit: "cover" }} alt="" /> : (name || "U").charAt(0).toUpperCase()}
-              <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}
-                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                onMouseLeave={e => e.currentTarget.style.opacity = 0}>
-                <span style={{ fontSize: 22 }}>{uploading ? "⏳" : "📷"}</span>
-              </div>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatar} style={{ display: "none" }} />
-            <div style={{ position: "absolute", bottom: 2, right: 2, width: 20, height: 20, borderRadius: "50%", background: "#10b981", border: "2px solid #fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 9, color: "#fff", fontWeight: 800 }}>✓</span>
-            </div>
-          </div>
-          {/* info */}
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text-h,#0f172a)" }}>{name || "Your Profile"}</h2>
-              <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 12px", borderRadius: 20, background: roleBg, color: roleColor }}>{roleLabel}</span>
-              {role === "lawyer" && available && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 20, background: "#f0fdf4", color: "#10b981", border: "1px solid #86efac" }}>● Available</span>}
-            </div>
-            <p style={{ margin: "0 0 4px", fontSize: 13, color: "#64748b" }}>{user?.email}</p>
-            {city && <p style={{ margin: 0, fontSize: 13, color: "#94a3b8" }}>📍 {city}{country && country !== "Pakistan" ? `, ${country}` : ", Pakistan"}</p>}
-            {role === "lawyer" && specs.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
-                {specs.slice(0, 3).map(s => <span key={s} style={{ fontSize: 11, fontWeight: 600, padding: "2px 9px", borderRadius: 20, background: "#f0fdf4", color: "#10b981" }}>{s}</span>)}
-                {specs.length > 3 && <span style={{ fontSize: 11, color: "#94a3b8", padding: "2px 0" }}>+{specs.length - 3} more</span>}
-              </div>
-            )}
-          </div>
-          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", alignSelf: "flex-end" }}>Click avatar to change photo</p>
-        </div>
-
-        {/* ── Common: Personal Info ─────────────────────────────── */}
-        <Section title="Personal Information" icon="👤">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-            <div style={{ gridColumn: "1/-1" }}>
-              <Field label="Full Name"><Inp value={name} onChange={setName} placeholder="Your full name" /></Field>
-            </div>
-            <Field label="Email Address" hint="Cannot be changed — contact support">
-              <Inp value={user?.email || ""} onChange={() => {}} disabled />
-            </Field>
-            <Field label="Phone Number">
-              <Inp value={phone} onChange={setPhone} placeholder="+92 300 0000000" type="tel" />
-            </Field>
-            <Field label="Date of Birth">
-              <Inp value={dob} onChange={setDob} type="date" />
-            </Field>
-            <Field label="Gender">
-              <select value={gender} onChange={e => setGender(e.target.value)}
-                style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border,#e2e8f0)", fontSize: 14, outline: "none", background: "var(--input-bg,#fff)", color: "var(--text,#0f172a)" }}>
-                <option value="">Select gender</option>
-                <option>Male</option><option>Female</option><option>Prefer not to say</option>
-              </select>
-            </Field>
-            <Field label="City / Location">
-              <Inp value={city} onChange={setCity} placeholder="Karachi, Lahore, Islamabad…" />
-            </Field>
-            <Field label="Country">
-              <Inp value={country} onChange={setCountry} placeholder="Pakistan" />
-            </Field>
-            <Field label="CNIC / National ID" hint="Kept confidential — for verification only">
-              <Inp value={cnic} onChange={setCnic} placeholder="35201-1234567-1" />
-            </Field>
-            <div style={{ gridColumn: "1/-1" }}>
-              <Field label="Bio / About">
-                <Txt value={bio} onChange={setBio} placeholder="Tell others about yourself — your background, experience, and what you can help with…" rows={3} />
-              </Field>
-            </div>
-          </div>
-        </Section>
-
-        {/* ── LAWYER SECTIONS ──────────────────────────────────── */}
-        {role === "lawyer" && (<>
-          <Section title="Professional Details" icon="⚖️">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Field label="Bar Council / Enrollment Number"><Inp value={barNo} onChange={setBarNo} placeholder="e.g. KHC-2018-1234" /></Field>
-              <Field label="Years of Experience"><Inp value={experience} onChange={setExp} placeholder="e.g. 8" type="number" /></Field>
-              <Field label="Hourly Rate (PKR)"><Inp value={rate} onChange={setRate} placeholder="e.g. 5000" type="number" /></Field>
-              <Field label="Consultation Fee (PKR)"><Inp value={consultFee} onChange={setConsultFee} placeholder="e.g. 2500" type="number" /></Field>
-              <Field label="Law Firm / Organization"><Inp value={firm} onChange={setFirm} placeholder="Self-employed or firm name" /></Field>
-              <Field label="Firm Address"><Inp value={firmAddress} onChange={setFirmAddr} placeholder="Office address" /></Field>
-              <div style={{ gridColumn: "1/-1" }}>
-                <Toggle value={available} onChange={setAvail} label="Currently available for new cases" />
-              </div>
-            </div>
-          </Section>
-
-          <Section title="Education & Qualifications" icon="🎓">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Field label="Degree / Qualification"><Inp value={education} onChange={setEdu} placeholder="e.g. LLB, LLM, Bar-at-Law" /></Field>
-              <Field label="University / Institution"><Inp value={university} onChange={setUni} placeholder="e.g. University of Karachi" /></Field>
-              <Field label="Graduation Year"><Inp value={gradYear} onChange={setGradYear} placeholder="e.g. 2015" type="number" /></Field>
-              <Field label="LinkedIn Profile (Optional)"><Inp value={linkedIn} onChange={setLinkedIn} placeholder="https://linkedin.com/in/…" /></Field>
-              <div style={{ gridColumn: "1/-1" }}>
-                <Field label="Awards & Recognitions">
-                  <Txt value={awards} onChange={setAwards} placeholder="List any notable awards, recognitions…" rows={2} />
-                </Field>
-              </div>
-              <div style={{ gridColumn: "1/-1" }}>
-                <Field label="Publications & Articles">
-                  <Txt value={publications} onChange={setPubs} placeholder="Published works, legal articles…" rows={2} />
-                </Field>
-              </div>
-            </div>
-          </Section>
-
-          <Section title="Practice Areas" icon="📋">
-            <Field label="Specializations (select all that apply)">
-              <TagSelector tags={SPECS} selected={specs} onChange={setSpecs} color="#10b981" bg="#f0fdf4" />
-            </Field>
-            <Field label="Courts Practiced In">
-              <TagSelector tags={COURTS} selected={courts} onChange={setCourts} color="#3b82f6" bg="#eff6ff" />
-            </Field>
-          </Section>
-
-          <Section title="Languages" icon="🌐">
-            <Field label="Languages Spoken">
-              <TagSelector tags={LANGS} selected={langs} onChange={setLangs} color="#8b5cf6" bg="#f5f3ff" />
-            </Field>
-          </Section>
-        </>)}
-
-        {/* ── CLIENT SECTIONS ──────────────────────────────────── */}
-        {role === "client" && (<>
-          <Section title="Legal Needs & Preferences" icon="⚖️">
-            <Field label="Type of Legal Help Needed (select all that apply)">
-              <TagSelector tags={LEGAL_NEEDS} selected={legalNeeds} onChange={setNeeds} color="#3b82f6" bg="#eff6ff" />
-            </Field>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 4 }}>
-              <Field label="Preferred Language for Communication">
-                <select value={prefLang} onChange={e => setPLang(e.target.value)}
-                  style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border,#e2e8f0)", fontSize: 14, outline: "none", background: "var(--input-bg,#fff)", color: "var(--text,#0f172a)" }}>
-                  {LANGS.map(l => <option key={l}>{l}</option>)}
-                </select>
-              </Field>
-              <Field label="Occupation / Profession">
-                <Inp value={occupation} onChange={setOccupation} placeholder="e.g. Business owner, Teacher…" />
-              </Field>
-              <Field label="Emergency Contact Number">
-                <Inp value={emergency} onChange={setEmergency} placeholder="+92 300 0000000" type="tel" />
-              </Field>
-            </div>
-            <Field label="Additional Notes for Lawyers" hint="Any extra context that might help your lawyer">
-              <Txt value={caseNotes} onChange={setCaseNotes} placeholder="Describe your situation briefly…" rows={3} />
-            </Field>
-          </Section>
-        </>)}
-
-        {/* ── ADMIN SECTIONS ───────────────────────────────────── */}
-        {role === "admin" && (<>
-          <Section title="Administrative Details" icon="🛡️">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Field label="Department / Division"><Inp value={department} onChange={setDept} placeholder="e.g. Legal Operations, IT, HR…" /></Field>
-              <Field label="Employee ID"><Inp value={empId} onChange={setEmpId} placeholder="e.g. ADM-001" /></Field>
-              <Field label="Supervisor / Manager"><Inp value={supervisor} onChange={setSupervisor} placeholder="Supervisor's name" /></Field>
-              <Field label="Access Level" hint="Managed by system — contact super-admin to change">
-                <Inp value="Full Administrative Access" onChange={() => {}} disabled />
-              </Field>
-            </div>
-          </Section>
-        </>)}
-
-        {/* ── Save bar ─────────────────────────────────────────── */}
-        <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border,#f1f5f9)", padding: "18px 24px", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12, boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-          <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", flex: 1 }}>All changes are saved to your account immediately.</p>
-          <button onClick={loadProfile}
-            style={{ padding: "10px 22px", borderRadius: 12, border: "1px solid var(--border,#e2e8f0)", background: "transparent", color: "var(--text-muted,#64748b)", fontWeight: 600, cursor: "pointer", fontSize: 14 }}>
-            Reset
+    <div style={{ gridColumn: span === 2 ? "span 2" : undefined }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted,#64748b)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</label>
+      <div style={{ position: "relative" }}>
+        {Icon && <Icon size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted,#94a3b8)" }} />}
+        <input
+          type={type === "password" ? (show ? "text" : "password") : type}
+          value={value || ""}
+          onChange={e => onChange?.(e.target.value)}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className="profile-input"
+          style={{ width: "100%", padding: `10px 14px 10px ${Icon ? "32px" : "14px"}`, borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", fontSize: 14, outline: "none", background: readOnly ? "var(--input-readonly,#f8fafc)" : "var(--input-bg,#fff)", color: "var(--text-primary,#0f172a)", boxSizing: "border-box", paddingRight: type === "password" ? 42 : 14, cursor: readOnly ? "default" : undefined }}
+        />
+        {type === "password" && !readOnly && (
+          <button onClick={() => setShow(p => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted,#94a3b8)", display: "flex" }}>
+            {show ? <EyeOff size={14} /> : <Eye size={14} />}
           </button>
-          <button onClick={handleSave} disabled={saving}
-            style={{ padding: "10px 28px", borderRadius: 12, border: "none", background: roleColor, color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, opacity: saving ? 0.7 : 1, boxShadow: `0 4px 14px ${roleColor}40`, transition: "opacity 0.2s", display: "flex", alignItems: "center", gap: 8 }}>
-            {saving ? <><span style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Saving…</> : "Save Profile"}
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Select field ───────────────────────────────────────────────────── */
+function SelectField({ label, value, onChange, options }) {
+  return (
+    <div>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted,#64748b)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</label>
+      <select value={value || ""} onChange={e => onChange(e.target.value)}
+        className="profile-input"
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", fontSize: 14, outline: "none", background: "var(--input-bg,#fff)", color: "var(--text-primary,#0f172a)" }}>
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
+    </div>
+  );
+}
+
+/* ── Textarea field ─────────────────────────────────────────────────── */
+function TextArea({ label, value, onChange, placeholder, rows = 3 }) {
+  return (
+    <div style={{ gridColumn: "span 2" }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted,#64748b)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</label>
+      <textarea value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
+        className="profile-input"
+        style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", fontSize: 14, outline: "none", background: "var(--input-bg,#fff)", color: "var(--text-primary,#0f172a)", boxSizing: "border-box", resize: "vertical", lineHeight: 1.6 }}
+      />
+    </div>
+  );
+}
+
+/* ── Tag input (comma-separated array) ─────────────────────────────── */
+function TagInput({ label, value = [], onChange }) {
+  const [input, setInput] = useState("");
+  const add = () => {
+    const trimmed = input.trim();
+    if (trimmed && !value.includes(trimmed)) { onChange([...value, trimmed]); }
+    setInput("");
+  };
+  const remove = (tag) => onChange(value.filter(t => t !== tag));
+  return (
+    <div style={{ gridColumn: "span 2" }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted,#64748b)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 10px", borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", background: "var(--input-bg,#fff)", minHeight: 44 }}>
+        {value.map(tag => (
+          <span key={tag} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 10px", borderRadius: 20, background: "#eff6ff", color: "#3b82f6", fontSize: 12, fontWeight: 700 }}>
+            {tag}
+            <button onClick={() => remove(tag)} style={{ background: "none", border: "none", cursor: "pointer", color: "#93c5fd", padding: 0, fontSize: 12, lineHeight: 1, display: "flex" }}>×</button>
+          </span>
+        ))}
+        <input
+          value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" || e.key === ",") { e.preventDefault(); add(); } }}
+          placeholder="Type and press Enter…"
+          style={{ border: "none", outline: "none", fontSize: 13, background: "transparent", color: "var(--text-primary,#0f172a)", minWidth: 120, flex: 1 }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ── Section wrapper ────────────────────────────────────────────────── */
+function Section({ icon: Icon, title, subtitle, color, children, onSave, onReset, saving, dirty }) {
+  return (
+    <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border-color,#f1f5f9)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", overflow: "hidden", marginBottom: 20, animation: "fd 0.4s ease both" }}>
+      <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color,#f1f5f9)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon size={18} style={{ color }} />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-heading,#0f172a)" }}>{title}</h3>
+            <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted,#64748b)" }}>{subtitle}</p>
+          </div>
+          {dirty && <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "#fef3c7", color: "#d97706" }}>Unsaved</span>}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onReset} title="Discard changes"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", background: "transparent", color: "var(--text-muted,#64748b)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <RotateCcw size={13} /> Reset
+          </button>
+          <button onClick={onSave} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: color, color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: saving ? 0.7 : 1, boxShadow: `0 4px 12px ${color}40` }}>
+            {saving ? <div style={{ width: 13, height: 13, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Save size={13} />}
+            {saving ? "Saving…" : "Save Changes"}
           </button>
         </div>
       </div>
+      <div style={{ padding: "20px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {children}
+        </div>
+      </div>
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════════ */
+export default function ProfilePage() {
+  const { user } = useAppSelector(s => s.auth);
+  const fileRef = useRef(null);
+
+  const [original, setOriginal]     = useState(null);   // raw from server
+  const [personal, setPersonal]     = useState({});
+  const [lawyerP,  setLawyerP]      = useState({});
+  const [clientP,  setClientP]      = useState({});
+  const [pwForm,   setPwForm]       = useState({ currentPassword: "", password: "", confirmPassword: "" });
+  const [saving,   setSaving]       = useState({});
+  const [toast,    setToast]        = useState(null);
+  const [loading,  setLoading]      = useState(true);
+  const [avatarUp, setAvatarUp]     = useState(false);
+  const [dirty,    setDirty]        = useState({});
+  const [vis,      setVis]          = useState(false);
+
+  const role = original?.role || user?.role || "client";
+
+  const showToast = (msg, type = "success") => setToast({ msg, type });
+
+  /* ── Fetch profile ────────────────────────────────────────────────── */
+  const loadProfile = async () => {
+    setLoading(true);
+    try {
+      const r = await fetch(`${API}/api/auth/me`, { credentials: "include", headers: HJ() });
+      if (!r.ok) throw new Error("Failed");
+      const d = await r.json();
+      const u = d.user || d;
+      setOriginal(u);
+      setPersonal({
+        name: u.name || "",
+        phone: u.phone || "",
+        bio: u.bio || "",
+        city: u.city || "",
+        country: u.country || "",
+        address: u.address || "",
+        dob: u.dob || "",
+        gender: u.gender || "",
+        nationalId: u.nationalId || "",
+        profileImage: u.profileImage || "",
+      });
+      setLawyerP(u.lawyerProfile || {});
+      setClientP(u.clientProfile || {});
+    } catch { showToast("Failed to load profile", "error"); }
+    finally { setLoading(false); setTimeout(() => setVis(true), 80); }
+  };
+
+  useEffect(() => { if (user) loadProfile(); }, [user]);
+
+  /* ── Mark dirty ────────────────────────────────────────────────────── */
+  const upPersonal = (key, val) => {
+    setPersonal(p => ({ ...p, [key]: val }));
+    setDirty(p => ({ ...p, personal: true }));
+  };
+  const upLawyer = (key, val) => {
+    setLawyerP(p => ({ ...p, [key]: val }));
+    setDirty(p => ({ ...p, lawyer: true }));
+  };
+  const upClient = (key, val) => {
+    setClientP(p => ({ ...p, [key]: val }));
+    setDirty(p => ({ ...p, client: true }));
+  };
+
+  /* ── Save personal ─────────────────────────────────────────────────── */
+  const savePersonal = async () => {
+    setSaving(p => ({ ...p, personal: true }));
+    try {
+      const r = await fetch(`${API}/api/auth/profile`, {
+        method: "PUT", credentials: "include", headers: HJ(),
+        body: JSON.stringify(personal),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d = await r.json();
+      setOriginal(d.user);
+      setDirty(p => ({ ...p, personal: false }));
+      showToast("Personal info saved!");
+    } catch { showToast("Failed to save", "error"); }
+    finally { setSaving(p => ({ ...p, personal: false })); }
+  };
+
+  /* ── Save role-specific ─────────────────────────────────────────────── */
+  const saveRoleProfile = async (section) => {
+    setSaving(p => ({ ...p, [section]: true }));
+    const endpoint = section === "lawyer" ? `${API}/api/lawyers/profile` : `${API}/api/clients/profile`;
+    try {
+      const body = section === "lawyer" ? { ...personal, lawyerProfile: lawyerP } : { ...personal, clientProfile: clientP };
+      const r = await fetch(endpoint, {
+        method: "PUT", credentials: "include", headers: HJ(),
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error("Failed");
+      const d = await r.json();
+      setOriginal(d.user);
+      setDirty(p => ({ ...p, [section]: false }));
+      showToast(`${section.charAt(0).toUpperCase() + section.slice(1)} profile saved!`);
+    } catch { showToast("Failed to save", "error"); }
+    finally { setSaving(p => ({ ...p, [section]: false })); }
+  };
+
+  /* ── Change password ────────────────────────────────────────────────── */
+  const changePassword = async () => {
+    if (pwForm.password !== pwForm.confirmPassword) {
+      return showToast("Passwords do not match", "error");
+    }
+    if (pwForm.password.length < 8) {
+      return showToast("Password must be at least 8 characters", "error");
+    }
+    setSaving(p => ({ ...p, password: true }));
+    try {
+      const r = await fetch(`${API}/api/auth/change-password`, {
+        method: "POST", credentials: "include", headers: HJ(),
+        body: JSON.stringify({ currentPassword: pwForm.currentPassword, password: pwForm.password }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.message || "Failed");
+      setPwForm({ currentPassword: "", password: "", confirmPassword: "" });
+      showToast("Password changed successfully!");
+    } catch (e) { showToast(e.message || "Failed to change password", "error"); }
+    finally { setSaving(p => ({ ...p, password: false })); }
+  };
+
+  /* ── Upload avatar ──────────────────────────────────────────────────── */
+  const handleAvatar = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.type.startsWith("image/")) return showToast("Please select an image file", "error");
+    setAvatarUp(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch(`${API}/api/upload`, { method: "POST", headers: H(), body: fd, credentials: "include" });
+      if (!r.ok) throw new Error("Upload failed");
+      const d = await r.json();
+      const url = d.url || d.fileUrl;
+      const pr = await fetch(`${API}/api/auth/profile`, {
+        method: "PUT", credentials: "include", headers: HJ(),
+        body: JSON.stringify({ profileImage: url }),
+      });
+      if (pr.ok) {
+        setPersonal(p => ({ ...p, profileImage: url }));
+        showToast("Avatar updated!");
+      }
+    } catch { showToast("Avatar upload failed", "error"); }
+    finally { setAvatarUp(false); }
+  };
+
+  /* ── Reset sections ─────────────────────────────────────────────────── */
+  const resetPersonal = () => {
+    if (!original) return;
+    setPersonal({ name: original.name || "", phone: original.phone || "", bio: original.bio || "", city: original.city || "", country: original.country || "", address: original.address || "", dob: original.dob || "", gender: original.gender || "", nationalId: original.nationalId || "", profileImage: original.profileImage || "" });
+    setDirty(p => ({ ...p, personal: false }));
+    showToast("Changes discarded");
+  };
+  const resetLawyer = () => { setLawyerP(original?.lawyerProfile || {}); setDirty(p => ({ ...p, lawyer: false })); showToast("Changes discarded"); };
+  const resetClient = () => { setClientP(original?.clientProfile || {}); setDirty(p => ({ ...p, client: false })); showToast("Changes discarded"); };
+  const resetPassword = () => { setPwForm({ currentPassword: "", password: "", confirmPassword: "" }); };
+
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, gap: 14 }}>
+      <div style={{ width: 40, height: 40, border: "3px solid var(--border-color,#e2e8f0)", borderTopColor: "#3b82f6", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <p style={{ color: "var(--text-muted,#64748b)", fontSize: 14, margin: 0 }}>Loading profile…</p>
+    </div>
+  );
+
+  const avatarLetter = (personal.name || user?.email || "U").charAt(0).toUpperCase();
+  const roleColor    = { admin: "#ef4444", lawyer: "#10b981", client: "#3b82f6" }[role] || "#6366f1";
+
+  return (
+    <>
+      <style>{`
+        @keyframes fd{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        :root{--input-readonly:#f8fafc;}
+        .dark{--input-readonly:#0f172a;}
+        .profile-input:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,0.1)!important;}
+        .profile-input{transition:border-color 0.15s,box-shadow 0.15s;}
+        .avatar-btn:hover .avatar-overlay{opacity:1!important;}
+      `}</style>
+
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatar} style={{ display: "none" }} />
+
+      <div style={{ maxWidth: 860, margin: "0 auto", opacity: vis ? 1 : 0, transition: "opacity 0.4s" }}>
+
+        {/* ── Avatar hero card ─────────────────────────────────────────── */}
+        <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border-color,#f1f5f9)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", padding: "28px 28px", marginBottom: 20, display: "flex", alignItems: "center", gap: 24, flexWrap: "wrap", animation: "fd 0.4s ease" }}>
+          {/* Avatar */}
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button className="avatar-btn" onClick={() => fileRef.current?.click()} disabled={avatarUp}
+              style={{ width: 88, height: 88, borderRadius: "50%", background: roleColor, color: "#fff", fontSize: 32, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", border: `3px solid ${roleColor}40`, cursor: "pointer", overflow: "hidden", position: "relative" }}>
+              {personal.profileImage
+                ? <img src={personal.profileImage} style={{ width: 88, height: 88, objectFit: "cover" }} alt="" />
+                : avatarLetter}
+              <div className="avatar-overlay" style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s", borderRadius: "50%" }}>
+                {avatarUp ? <div style={{ width: 20, height: 20, border: "2px solid rgba(255,255,255,0.5)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Camera size={20} color="#fff" />}
+              </div>
+            </button>
+            <div style={{ position: "absolute", bottom: 2, right: 2, width: 20, height: 20, borderRadius: "50%", background: "#10b981", border: "3px solid var(--card-bg,#fff)" }} />
+          </div>
+          {/* Info */}
+          <div style={{ flex: 1 }}>
+            <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text-heading,#0f172a)" }}>{personal.name || "Your Name"}</h2>
+            <p style={{ margin: "4px 0", fontSize: 14, color: "var(--text-muted,#64748b)" }}>{original?.email}</p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: `${roleColor}18`, color: roleColor, textTransform: "capitalize" }}>{role}</span>
+              {original?.emailVerified && <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: "#f0fdf4", color: "#10b981" }}>✓ Verified</span>}
+              {personal.city && <span style={{ fontSize: 12, color: "var(--text-muted,#94a3b8)", display: "flex", alignItems: "center", gap: 3 }}><MapPin size={11} />{personal.city}{personal.country ? `, ${personal.country}` : ""}</span>}
+            </div>
+          </div>
+          <button onClick={() => fileRef.current?.click()}
+            style={{ padding: "10px 18px", borderRadius: 12, background: "var(--input-bg,#f8fafc)", border: "1px solid var(--border-color,#e2e8f0)", color: "var(--text-primary,#374151)", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+            <Camera size={14} /> Change Photo
+          </button>
+        </div>
+
+        {/* ── Personal Info ─────────────────────────────────────────────── */}
+        <Section icon={User} title="Personal Information" subtitle="Basic details visible on your profile"
+          color="#3b82f6" onSave={savePersonal} onReset={resetPersonal} saving={saving.personal} dirty={dirty.personal}>
+          <Field label="Full Name"    value={personal.name}      onChange={v => upPersonal("name", v)}      icon={User}   placeholder="Your full name" />
+          <Field label="Phone"        value={personal.phone}     onChange={v => upPersonal("phone", v)}     icon={Phone}  type="tel" placeholder="+1 234 567 8900" />
+          <Field label="City"         value={personal.city}      onChange={v => upPersonal("city", v)}      icon={MapPin} placeholder="City" />
+          <Field label="Country"      value={personal.country}   onChange={v => upPersonal("country", v)}   icon={Globe}  placeholder="Country" />
+          <Field label="Address"      value={personal.address}   onChange={v => upPersonal("address", v)}   icon={MapPin} placeholder="Street address" />
+          <Field label="Date of Birth" value={personal.dob}      onChange={v => upPersonal("dob", v)}       type="date" />
+          <SelectField label="Gender" value={personal.gender} onChange={v => upPersonal("gender", v)}
+            options={[{ value: "", label: "Prefer not to say" }, { value: "male", label: "Male" }, { value: "female", label: "Female" }, { value: "other", label: "Other" }]} />
+          <Field label="National ID"  value={personal.nationalId} onChange={v => upPersonal("nationalId", v)} icon={Shield} placeholder="ID number" />
+          <TextArea label="Bio" value={personal.bio} onChange={v => upPersonal("bio", v)} placeholder="Tell others about yourself…" rows={3} />
+        </Section>
+
+        {/* ── Lawyer Profile ──────────────────────────────────────────────── */}
+        {role === "lawyer" && (
+          <Section icon={Scale} title="Lawyer Profile" subtitle="Professional details displayed to clients"
+            color="#10b981" onSave={() => saveRoleProfile("lawyer")} onReset={resetLawyer} saving={saving.lawyer} dirty={dirty.lawyer}>
+            <Field label="Bar Number"        value={lawyerP.barNumber}         onChange={v => upLawyer("barNumber", v)}         icon={Award}     placeholder="BAR-12345" />
+            <Field label="Bar Council"       value={lawyerP.barCouncil}        onChange={v => upLawyer("barCouncil", v)}        icon={Award}     placeholder="State Bar" />
+            <Field label="Jurisdiction"      value={lawyerP.jurisdiction}      onChange={v => upLawyer("jurisdiction", v)}      icon={Globe}     placeholder="Federal / State" />
+            <Field label="Years of Experience" value={lawyerP.yearsOfExperience} onChange={v => upLawyer("yearsOfExperience", Number(v))} type="number" min={0} placeholder="5" />
+            <Field label="Hourly Rate (USD)" value={lawyerP.hourlyRate}        onChange={v => upLawyer("hourlyRate", Number(v))} type="number" min={0} placeholder="150" />
+            <Field label="Consultation Fee"  value={lawyerP.consultationFee}   onChange={v => upLawyer("consultationFee", Number(v))} type="number" min={0} placeholder="50" />
+            <Field label="Office Address"    value={lawyerP.officeAddress}     onChange={v => upLawyer("officeAddress", v)}     icon={MapPin}    placeholder="Office location" />
+            <Field label="Website"           value={lawyerP.website}           onChange={v => upLawyer("website", v)}           icon={Globe}     placeholder="https://yoursite.com" />
+            <Field label="LinkedIn"          value={lawyerP.linkedIn}          onChange={v => upLawyer("linkedIn", v)}          icon={Linkedin}  placeholder="linkedin.com/in/…" />
+            <Field label="University"        value={lawyerP.university}        onChange={v => upLawyer("university", v)}        icon={BookOpen}  placeholder="Harvard Law School" />
+            <Field label="Graduation Year"   value={lawyerP.graduationYear}    onChange={v => upLawyer("graduationYear", v)}    icon={BookOpen}  placeholder="2015" />
+            <TextArea label="Professional Bio" value={lawyerP.bio} onChange={v => upLawyer("bio", v)} placeholder="Describe your legal expertise…" rows={3} />
+            <TagInput label="Specializations" value={lawyerP.specializations || []} onChange={v => upLawyer("specializations", v)} />
+            <TagInput label="Languages" value={lawyerP.languages || []} onChange={v => upLawyer("languages", v)} />
+            <TagInput label="Courts" value={lawyerP.courts || []} onChange={v => upLawyer("courts", v)} />
+          </Section>
+        )}
+
+        {/* ── Client Profile ──────────────────────────────────────────────── */}
+        {role === "client" && (
+          <Section icon={User} title="Client Profile" subtitle="Additional details to help match you with lawyers"
+            color="#8b5cf6" onSave={() => saveRoleProfile("client")} onReset={resetClient} saving={saving.client} dirty={dirty.client}>
+            <Field label="Occupation"         value={clientP.occupation}         onChange={v => upClient("occupation", v)}         placeholder="Software Engineer" />
+            <Field label="Employer"           value={clientP.employer}           onChange={v => upClient("employer", v)}           placeholder="Company name" />
+            <Field label="Annual Income"      value={clientP.income}             onChange={v => upClient("income", v)}             placeholder="e.g. $50,000" />
+            <Field label="Emergency Contact"  value={clientP.emergencyContact}   onChange={v => upClient("emergencyContact", v)}   icon={Phone} placeholder="+1 234 567 8900" />
+            <SelectField label="Preferred Language" value={clientP.preferredLanguage || "English"} onChange={v => upClient("preferredLanguage", v)}
+              options={["English","Arabic","Spanish","French","Urdu","Chinese","Hindi"].map(l => ({ value: l, label: l }))} />
+            <TagInput label="Legal Needs" value={clientP.legalNeeds || []} onChange={v => upClient("legalNeeds", v)} />
+            <TextArea label="Notes" value={clientP.notes} onChange={v => upClient("notes", v)} placeholder="Any additional context for lawyers…" />
+          </Section>
+        )}
+
+        {/* ── Admin Profile ────────────────────────────────────────────────── */}
+        {role === "admin" && (
+          <Section icon={Shield} title="Admin Details" subtitle="Administrative role information"
+            color="#ef4444" onSave={savePersonal} onReset={resetPersonal} saving={saving.personal} dirty={dirty.personal}>
+            <Field label="Department"   value={original?.department  || ""} onChange={v => setPersonal(p => ({...p, department: v}))}   placeholder="Legal Operations" />
+            <Field label="Employee ID"  value={original?.employeeId  || ""} onChange={v => setPersonal(p => ({...p, employeeId: v}))}   placeholder="EMP-001" />
+            <Field label="Supervisor"   value={original?.supervisor  || ""} onChange={v => setPersonal(p => ({...p, supervisor: v}))}   placeholder="Manager name" />
+          </Section>
+        )}
+
+        {/* ── Account Security ─────────────────────────────────────────────── */}
+        <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border-color,#f1f5f9)", boxShadow: "0 2px 12px rgba(0,0,0,0.04)", overflow: "hidden", marginBottom: 20, animation: "fd 0.6s ease both" }}>
+          <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color,#f1f5f9)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Lock size={18} style={{ color: "#ef4444" }} />
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "var(--text-heading,#0f172a)" }}>Change Password</h3>
+                <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted,#64748b)" }}>Update your account password</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={resetPassword}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 10, border: "1px solid var(--border-color,#e2e8f0)", background: "transparent", color: "var(--text-muted,#64748b)", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                <RotateCcw size={13} /> Clear
+              </button>
+              <button onClick={changePassword} disabled={saving.password || !pwForm.password}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: pwForm.password ? "#ef4444" : "var(--input-bg,#f1f5f9)", color: pwForm.password ? "#fff" : "var(--text-muted,#94a3b8)", border: "none", fontSize: 13, fontWeight: 700, cursor: pwForm.password ? "pointer" : "not-allowed", opacity: saving.password ? 0.7 : 1, transition: "all 0.15s" }}>
+                {saving.password ? <div style={{ width: 13, height: 13, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Lock size={13} />}
+                {saving.password ? "Updating…" : "Update Password"}
+              </button>
+            </div>
+          </div>
+          <div style={{ padding: "20px 24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+              <Field label="Current Password" value={pwForm.currentPassword} onChange={v => setPwForm(p => ({...p, currentPassword: v}))} type="password" placeholder="••••••••" icon={Lock} />
+              <Field label="New Password"     value={pwForm.password}        onChange={v => setPwForm(p => ({...p, password: v}))}        type="password" placeholder="Min 8 characters" icon={Lock} />
+              <Field label="Confirm Password" value={pwForm.confirmPassword} onChange={v => setPwForm(p => ({...p, confirmPassword: v}))} type="password" placeholder="Repeat new password" icon={Lock} />
+            </div>
+            {pwForm.password && pwForm.confirmPassword && pwForm.password !== pwForm.confirmPassword && (
+              <p style={{ margin: "10px 0 0", fontSize: 12, color: "#ef4444", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                <AlertTriangle size={12} /> Passwords do not match
+              </p>
+            )}
+            {pwForm.password && pwForm.password.length < 8 && (
+              <p style={{ margin: "10px 0 0", fontSize: 12, color: "#f59e0b", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
+                <AlertTriangle size={12} /> Password must be at least 8 characters
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Account info (read-only) */}
+        <div style={{ background: "var(--card-bg,#fff)", borderRadius: 20, border: "1px solid var(--border-color,#f1f5f9)", padding: "20px 24px", animation: "fd 0.7s ease both" }}>
+          <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 700, color: "var(--text-heading,#0f172a)" }}>Account Information</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            {[
+              { label: "Email",       value: original?.email },
+              { label: "Role",        value: original?.role },
+              { label: "Member Since",value: original?.createdAt ? new Date(original.createdAt).toLocaleDateString() : "—" },
+              { label: "Email Status", value: original?.emailVerified ? "✓ Verified" : "⚠ Unverified" },
+              { label: "Last Login",  value: original?.lastLogin ? new Date(original.lastLogin).toLocaleString() : "—" },
+              { label: "Account ID",  value: original?._id?.slice(-8) },
+            ].map(({ label, value }) => (
+              <div key={label} style={{ padding: "12px 14px", borderRadius: 12, background: "var(--input-bg,#f8fafc)", border: "1px solid var(--border-color,#f1f5f9)" }}>
+                <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "var(--text-muted,#94a3b8)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, fontWeight: 600, color: "var(--text-heading,#0f172a)" }}>{value || "—"}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
