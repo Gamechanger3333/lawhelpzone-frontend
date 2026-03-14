@@ -20,7 +20,7 @@ import {
   Loader2, ArrowRight, RefreshCw,
 } from "lucide-react";
 
-export default function StripeSetupContent() {
+function StripeSetupContent() {
   const dispatch      = useDispatch();
   const router        = useRouter();
   const searchParams  = useSearchParams();
