@@ -6,7 +6,7 @@
 // Theme-aware via CSS variables.
 // ══════════════════════════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
-import { useAppSelector, useAppDispatch } from "@/store/index"
+import { useAppSelector, useAppDispatch } from "../../../../store/index";
 import {
   User, Briefcase, Lock, Camera, Save, RotateCcw,
   CheckCircle, AlertTriangle, X, Eye, EyeOff,
