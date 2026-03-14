@@ -4,6 +4,7 @@
 // Stripe redirects here after payment (return_url in confirmPayment).
 // We read the payment_intent query param to show status.
 
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle, XCircle, Clock, Loader2, ArrowLeft } from "lucide-react";
@@ -12,7 +13,7 @@ import { selectUser } from "@/store/slices/authSlice";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router       = useRouter();
   const user         = useSelector(selectUser);
@@ -109,5 +110,13 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
