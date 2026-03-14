@@ -4,7 +4,7 @@
 // Stripe redirects lawyer back here after onboarding.
 // Query params from Stripe: none (just a return URL).
 // We re-check account status and show result.
-
+import { Suspense } from "react";   // add Suspense here
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -20,7 +20,7 @@ import {
   Loader2, ArrowRight, RefreshCw,
 } from "lucide-react";
 
-export default function StripeSetupPage() {
+export default function StripeSetupContent() {
   const dispatch      = useDispatch();
   const router        = useRouter();
   const searchParams  = useSearchParams();
@@ -149,5 +149,13 @@ export default function StripeSetupPage() {
         Connect Stripe Account
       </button>
     </div>
+  );
+}
+
+export default function StripeSetupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <StripeSetupContent />
+    </Suspense>
   );
 }
