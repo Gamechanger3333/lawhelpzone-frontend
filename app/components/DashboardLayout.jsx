@@ -215,7 +215,7 @@ export default function DashboardLayout({ children, role }) {
   };
 
   const SidebarInner = ({ forMobile = false }) => (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full" style={{ overflow: "hidden" }}>
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="p-4 flex items-center gap-3">
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
           style={{ backgroundColor: config.dot }}>
@@ -264,25 +264,37 @@ export default function DashboardLayout({ children, role }) {
 
       {mob && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setMob(false)} />}
 
-      <aside className={cn("fixed inset-y-0 left-0 z-50 w-64 lg:hidden transition-transform duration-300", mob ? "translate-x-0" : "-translate-x-full")}
+      <aside className={cn("fixed inset-y-0 left-0 z-50 w-64 flex flex-col lg:hidden transition-transform duration-300", mob ? "translate-x-0" : "-translate-x-full")}
         style={{ backgroundColor: NAVY }}>
-        <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="h-14 flex items-center justify-between px-4">
-          <span className="text-lg font-bold" style={{ color: "#93c5fd" }}>LawHelpZone</span>
-          <button onClick={() => setMob(false)} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
+        {/* Mobile drawer header — shrink-0 so it never squashes */}
+        <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="h-14 shrink-0 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: ACT }}>
+              <span className="text-white font-bold text-xs">L</span>
+            </div>
+            <span className="text-base font-bold" style={{ color: "#93c5fd" }}>LawHelpZone</span>
+          </div>
+          <button onClick={() => setMob(false)} className="text-gray-400 hover:text-white p-1"><X className="w-5 h-5" /></button>
         </div>
-        <SidebarInner forMobile />
+        {/* flex-1 min-h-0 — gives SidebarInner exactly the remaining height */}
+        <div className="flex-1 min-h-0">
+          <SidebarInner forMobile />
+        </div>
       </aside>
 
-      <aside className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen transition-all duration-300 overflow-hidden"
-        style={{ backgroundColor: NAVY, width: open ? "256px" : "64px" }}>
-        <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="h-14 flex items-center justify-between px-4">
+      <aside className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen transition-all duration-300"
+        style={{ backgroundColor: NAVY, width: open ? "256px" : "64px", overflow: "hidden" }}>
+        <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="h-14 shrink-0 flex items-center justify-between px-4">
           {open && <span className="text-base font-bold whitespace-nowrap truncate" style={{ color: "#93c5fd" }}>LawHelpZone</span>}
           <button onClick={() => setOpen(o => !o)}
             className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors shrink-0">
             {open ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
-        <SidebarInner />
+        {/* flex-1 min-h-0 ensures SidebarInner fills remaining space without overflowing */}
+        <div className="flex-1 min-h-0">
+          <SidebarInner />
+        </div>
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -353,9 +365,41 @@ export default function DashboardLayout({ children, role }) {
           </div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6 overflow-y-auto" style={{ color: dark ? "#f9fafb" : "#111827" }}>
+        <main className="flex-1 p-4 sm:p-6 overflow-y-auto pb-20 lg:pb-6" style={{ color: dark ? "#f9fafb" : "#111827" }}>
           {children}
         </main>
+
+        {/* ── Mobile bottom tab bar — always visible, always accessible ── */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
+          style={{ backgroundColor: NAVY, borderTop: "1px solid rgba(255,255,255,0.12)", height: 60 }}>
+          {[
+            { label: "Home",    href: "",              icon: LayoutDashboard, badge: null },
+            { label: "Chat",    href: "messages",      icon: MessageSquare,   badge: "msg" },
+            { label: "Calls",   href: "video-calls",   icon: Video,           badge: null },
+            { label: "Alerts",  href: "notifications", icon: Bell,            badge: "notif" },
+            { label: "Profile", href: "profile",       icon: User,            badge: null },
+          ].map(({ label, href, icon: Icon, badge: badgeKey }) => {
+            const active = isActive(href);
+            const count  = badgeKey ? getBadge(badgeKey) : 0;
+            return (
+              <button key={label} onClick={() => go(href)}
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 transition-all"
+                style={{ color: active ? "#60a5fa" : "#64748b", background: "transparent", border: "none", cursor: "pointer" }}>
+                <div className="relative">
+                  <Icon className="w-5 h-5" />
+                  {count > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center font-bold text-white rounded-full"
+                      style={{ minWidth: 14, height: 14, fontSize: 8, padding: "0 2px", background: badgeKey === "notif" ? "#ef4444" : "#3b82f6" }}>
+                      {count > 9 ? "9+" : count}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 9, fontWeight: active ? 700 : 500 }}>{label}</span>
+                {active && <div style={{ width: 16, height: 2, borderRadius: 2, background: "#60a5fa", marginTop: 1 }} />}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
       <style>{`
