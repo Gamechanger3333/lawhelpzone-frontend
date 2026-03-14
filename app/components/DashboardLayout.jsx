@@ -217,9 +217,11 @@ export default function DashboardLayout({ children, role }) {
   const SidebarInner = ({ forMobile = false }) => (
     <div className="flex flex-col h-full" style={{ overflow: "hidden" }}>
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="p-4 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+        <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0 overflow-hidden"
           style={{ backgroundColor: config.dot }}>
-          {initials}
+          {(profile?.profileImage || user?.profileImage)
+            ? <img src={profile?.profileImage || user?.profileImage} alt={name} className="w-full h-full object-cover" onError={e => { e.target.style.display = "none"; }} />
+            : initials}
         </div>
         {(open || forMobile) && (
           <div className="min-w-0">
