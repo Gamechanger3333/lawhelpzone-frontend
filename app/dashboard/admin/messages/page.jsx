@@ -1191,50 +1191,53 @@ function MessagesContent() {
         .msg-selected{background:rgba(37,211,102,0.12)!important;}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
 
-        /* ── Mobile responsive ── */
-        .msg-sidebar { display:flex; flex-direction:column; flex-shrink:0; }
+        /* ══ Mobile-first layout ══ */
+
+        /* Desktop: side-by-side */
+        .msg-outer   { display:flex; overflow:hidden; position:relative; }
+        .msg-sidebar { display:flex; flex-direction:column; flex-shrink:0; width:300px; }
         .msg-chat    { display:flex; flex:1; flex-direction:column; min-width:0; }
-        .mob-hide    { display:none !important; }
+        .mobile-back-btn { display:none; }
 
-        @media (max-width:639px){
-          .msg-sidebar{
-            position:absolute; inset:0; z-index:10;
-            width:100% !important; height:100%;
-            border-right:none !important;
+        @media (max-width:640px) {
+          /* Container fills screen */
+          .msg-outer {
+            height: calc(100svh - 60px) !important;
+            border-radius: 0 !important;
+            border: none !important;
           }
-          .msg-chat{
-            position:absolute; inset:0; z-index:10;
-            width:100% !important; height:100%;
-          }
-          .mob-hide{ display:none !important; }
-          .mobile-back-btn{ display:flex !important; }
 
-          /* Tighter bubbles on mobile */
-          .msg-b > div { max-width:82% !important; }
-
-          /* Input bar tighter */
-          .msg-inp{ font-size:15px; }
-        }
-        @media (min-width:640px){
-          .msg-sidebar{ width:300px !important; display:flex !important; }
-          .msg-chat   { display:flex !important; flex:1; }
-          .mob-hide   { display:flex !important; }
-          .mobile-back-btn{ display:none !important; }
-        }
-        @media (max-width:639px){
-          .msg-outer{
-            height:calc(100vh - 64px) !important;
-            border-radius:0 !important;
-            border:none !important;
-            margin:0 !important;
+          /* Sidebar = full screen, hidden when chat open */
+          .msg-sidebar {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            z-index: 5;
+            border-right: none !important;
           }
+          .msg-sidebar.mob-hide { display:none !important; }
+
+          /* Chat = full screen, hidden when list showing */
+          .msg-chat {
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            z-index: 5;
+          }
+          .msg-chat.mob-hide { display:none !important; }
+
+          /* Show back arrow on mobile */
+          .mobile-back-btn { display:flex !important; }
+
+          /* Wider bubbles on small screen */
+          .msg-b > div:last-child { max-width:85% !important; }
         }
       `}</style>
 
-      <div className="msg-outer" style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s", position: "relative" }}>
+      <div className="msg-outer" style={{ height: "calc(100vh - 112px)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s" }}>
 
         {/* ══════════════ SIDEBAR ══════════════ */}
-        <div style={{ flexDirection: "column", background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)", flexShrink: 0 }}
+        <div style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)" }}
           className={`msg-sidebar${mobileView === "chat" ? " mob-hide" : ""}`}>
           {/* Header */}
           <div style={{ padding: "14px 14px 10px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)" }}>
@@ -1325,7 +1328,7 @@ function MessagesContent() {
 
         {/* ══════════════ CHAT AREA ══════════════ */}
         {showChat ? (
-          <div style={{ flexDirection: "column", background: "var(--chat-bg)", minWidth: 0, position: "relative" }}
+          <div style={{ background: "var(--chat-bg)" }}
             className={`msg-chat${mobileView === "list" ? " mob-hide" : ""}`}>
             {/* Chat header - sticky on scroll */}
             <div style={{ padding: "10px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 20, position: "sticky", top: 0 }}>
@@ -1431,18 +1434,14 @@ function MessagesContent() {
                           </div>
                         )}
 
-                        {!mine && (
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginBottom: hasReactions ? 16 : 0, overflow: "hidden" }}>
-                            {activeInfo?.profileImage ? <img src={activeInfo.profileImage} style={{ width: 28, height: 28, objectFit: "cover" }} alt=""/> : activeName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        {/* No per-message avatar in 1-on-1 chat (WhatsApp style) */}
 
                         <div style={{ maxWidth: "68%", position: "relative" }}>
-                          {/* Reply-to snippet */}
-                          {msg.replyTo && !isDeleted && (
+                          {/* Reply-to snippet — only show if there is actual quoted content */}
+                          {msg.replyTo && msg.replyTo.content && !isDeleted && (
                             <div onClick={() => msg.replyTo._id && scrollToMsg(msg.replyTo._id)}
                               style={{ padding: "6px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(0,0,0,0.12)" : "var(--input-bg)", borderLeft: `3px solid ${mine ? "rgba(255,255,255,0.5)" : activeDot}`, marginBottom: -2, cursor: "pointer" }}>
-                              <p style={{ margin: 0, fontSize: 12, color: mine ? "rgba(255,255,255,0.7)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{msg.replyTo.content || "📎 File"}</p>
+                              <p style={{ margin: 0, fontSize: 12, color: mine ? "rgba(255,255,255,0.7)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{msg.replyTo.content}</p>
                             </div>
                           )}
 
@@ -1515,10 +1514,7 @@ function MessagesContent() {
 
               {/* Typing indicator */}
               {isTyping && (
-                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 4 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: "50%", background: activeDot, color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {activeName.charAt(0).toUpperCase()}
-                  </div>
+                <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 4, paddingLeft: 4 }}>
                   <div style={{ padding: "10px 14px", borderRadius: "14px 14px 14px 4px", background: "var(--bubble-other-bg)", border: "1px solid var(--border-color)", display: "flex", gap: 4, alignItems: "center" }}>
                     <div className="typing-dot"/>
                     <div className="typing-dot"/>
@@ -1661,7 +1657,7 @@ function MessagesContent() {
             )}
           </div>
         ) : (
-          <div style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--chat-bg)", gap: 16, minHeight: "100%" }}
+          <div style={{ background: "var(--chat-bg)", alignItems:"center", justifyContent:"center", gap:16 }}
             className={`msg-chat${mobileView === "list" ? " mob-hide" : ""}`}>
             <div style={{ width: 100, height: 100, borderRadius: "50%", background: "linear-gradient(135deg,#25d366,#128c7e)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 40px rgba(37,211,102,0.3)", animation: "pop 0.4s ease", fontSize: 46 }}>💬</div>
             <div style={{ textAlign: "center" }}>
