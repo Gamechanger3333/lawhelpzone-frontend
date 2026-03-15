@@ -51,12 +51,16 @@ const ROLE_C = { admin: "#ef4444", lawyer: "#10b981", client: "#3b82f6" };
 // Full emoji categories like WhatsApp
 const EMOJI_CATEGORIES = {
   "🕐 Recent": [],
-  "😀 Smileys": ["😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🤭","🤫","🤥","😶","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠"],
+  "😀 Smileys": ["😀","😃","😄","😁","😆","😅","😂","🤣","🥲","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🫡","🤔","🤭","🫢","🫣","🤫","🤥","😶","🫠","😐","😑","😬","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕","🤑","🤠","🥹","🫨"],
+  "🧑 People": ["👶","🧒","👦","👧","🧑","👱","👨","🧔","👩","🧓","👴","👵","🙍","🙎","🙅","🙆","💁","🙋","🧏","🙇","🤦","🤷","👮","🕵️","💂","🥷","👷","🫅","🤴","👸","👳","👲","🧕","🤵","👰","🤰","🫃","🫄","🤱","👼","🎅","🤶","🧙","🧝","🧛","🧟","🧞","🧜","🧚","🧑‍🦯","🧑‍🦼","🧑‍🦽","🏃","🧎","🧑‍🤝‍🧑","👫","👬","👭","💏","💑","👪"],
   "👋 Gestures": ["👋","🤚","🖐","✋","🖖","👌","🤌","🤏","✌️","🤞","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","👍","👎","✊","👊","🤛","🤜","👏","🙌","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦵","🦶","👂","🦻","👃","🫀","🫁","🧠","🦷","🦴","👀","👁","👅","👄"],
   "❤️ Hearts": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","❤️‍🔥","❤️‍🩹","💔","❣️","💕","💞","💓","💗","💖","💝","💘","💟","☮️","✝️","☪️","🕉","☸️","✡️","🔯","🕎","☯️","☦️","🛐","⛎","♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"],
   "🎉 Activities": ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🏓","🏸","🏒","🏑","🥍","🏏","🪃","🥅","⛳","🪁","🏹","🎣","🤿","🥊","🥋","🎽","🛹","🛷","⛸","🥌","🎿","⛷","🏂","🪂","🏋️","🤼","🤸","🤺","🏇","⛹️","🤾","🏌️","🧘","🏄","🏊","🤽","🚣","🧗","🚵","🚴","🏆","🥇","🥈","🥉","🎖","🏅","🎗","🎫","🎟","🎪","🤹","🎭","🎨","🎬","🎤","🎧","🎼","🎵","🎶","🎹","🥁","🪘","🎷","🎺","🎸","🪕","🎻","🎲","♟","🎯","🎳","🎮","🎰","🧩"],
   "🌍 Nature": ["🌱","🌿","☘️","🍀","🎍","🎋","🍃","🍂","🍁","🍄","🌾","💐","🌷","🌺","🌸","🌼","🌻","🌞","🌝","🌛","🌜","🌚","🌕","🌖","🌗","🌘","🌑","🌒","🌓","🌔","🌙","🌟","⭐","🌠","🌌","☀️","🌤","⛅","🌥","☁️","🌦","🌧","⛈","🌩","🌨","❄️","☃️","⛄","🌬","💨","💧","💦","☔","☂️","🌊","🌈"],
   "🍕 Food": ["🍎","🍊","🍋","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍","🥥","🥝","🍅","🍆","🥑","🥦","🥬","🥒","🌶","🫑","🌽","🥕","🫒","🧄","🧅","🥔","🍠","🥐","🥯","🍞","🥖","🥨","🧀","🥚","🍳","🧈","🥞","🧇","🥓","🥩","🍗","🍖","🌭","🍔","🍟","🍕","🫓","🥪","🥙","🧆","🌮","🌯","🫔","🥗","🥘","🫕","🥫","🍝","🍜","🍲","🍛","🍣","🍱","🥟","🦪","🍤","🍙","🍚","🍘","🍥","🥮","🍢","🧁","🍰","🎂","🍮","🍭","🍬","🍫","🍿","🍩","🍪","🌰","🥜","🍯","🧃","🥤","🧋","☕","🫖","🍵","🧉","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🧊"],
+  "🚗 Travel": ["🚗","🚕","🚙","🚌","🚎","🏎","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🏍","🛵","🛺","🚲","🛴","🛹","🛼","🚏","🛣","🛤","⛽","🚧","⚓","🛟","⛵","🚤","🛥","🛳","⛴","🚢","✈️","🛩","🛫","🛬","🪂","💺","🚁","🚟","🚠","🚡","🛰","🚀","🛸","🪐","🌍","🗺","🧭","🏔","⛰","🌋","🗻","🏕","🏖","🏜","🏝","🏞","🏟","🏛","🏗","🧱","🏘","🏚","🏠","🏡","🏢","🏣","🏤","🏥","🏦","🏨","🏩","🏪","🏫","🏬","🏭","🏯","🏰","💒","🗼","🗽","⛪","🕌","🛕","🕍","⛩","🕋","⛲","⛺","🌁","🌃","🏙","🌄","🌅","🌆","🌇","🌉","🌌","🌠","🎇","🎆","🌈"],
+  "📱 Objects": ["⌚","📱","📲","💻","⌨️","🖥","🖨","🖱","🖲","🕹","🗜","💽","💾","💿","📀","📼","📷","📸","📹","🎥","📽","🎞","📞","☎️","📟","📠","📺","📻","🧭","⏱","⏲","⏰","🕰","⌛","⏳","📡","🔋","🪫","🔌","💡","🔦","🕯","🪔","🧯","🛢","💸","💵","💴","💶","💷","🪙","💰","💳","🪝","💎","⚖️","🪜","🧰","🔧","🔨","⚒","🛠","⛏","🔩","🪛","🔫","💣","🪓","🔪","🗡","⚔️","🛡","🪚","🔬","🔭","📡","💊","🩹","🩺","🩻","🩼","🏥","🚑"],
+  "🔣 Symbols": ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","✅","❎","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🟤","🔺","🔻","🔷","🔶","🔹","🔸","▪️","▫️","◾","◽","◼️","◻️","⬛","⬜","🟥","🟧","🟨","🟩","🟦","🟪","⭕","❌","❓","❔","❕","❗","‼️","⁉️","🔅","🔆","〽️","⚠️","🚸","🔱","⚜️","🏧","♻️","✅","🆗","🆙","🆒","🆕","🆓","🔝","🆖","🅰️","🅱️","🆎","🆑","🅾️","🆘","🚫","📵","🔞","☢️","☣️","⬆️","⬇️","⬅️","➡️","🔀","🔁","🔂","▶️","⏩","⏭","⏯","◀️","⏪","⏮","🔼","⏫","🔽","⏬","⏸","⏹","⏺","🎦","🔅","🔆","📶","📳","📴","🔇","🔈","🔉","🔊","📢","📣","🔔","🔕","🃏","🀄","🎴","🔮","🧿","🪬"],
   "⚖️ Legal": ["⚖️","📋","💼","📁","📂","🗂","📄","📃","📝","✍️","📌","📍","🔍","🔎","📊","📈","📉","🏛","👨‍⚖️","👩‍⚖️","🤝","✅","❌","⛔","🚫","💡","🔑","🗝","🔐","🔒","🔓","📞","☎️","📱","💬","🗣","📢","📣"],
 };
 
@@ -817,11 +821,14 @@ function MessagesContent() {
   const [showCtxEmojiPicker, setShowCtxEmojiPicker] = useState(false);
   const [ctxReactMsgId,      setCtxReactMsgId]      = useState(null);
   const [mobileView,         setMobileView]          = useState("list"); // "list" | "chat"
+  const [showAttach,         setShowAttach]          = useState(false);
+  const [pinDuration,        setPinDuration]         = useState(null); // msg waiting for pin duration
   const [isRecording,  setIsRecording]  = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
 
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
+  const imgRef     = useRef(null);
   const inputRef   = useRef(null);
   const msgRefs    = useRef({});
   const chatArea   = useRef(null);
@@ -1018,7 +1025,12 @@ function MessagesContent() {
 
   // ── Pin message ────────────────────────────────────────────────────
   const togglePin = (msg) => {
-    setPinnedMsg(p => p?._id === msg._id ? null : msg);
+    if (pinnedMsg?._id === msg._id) { setPinnedMsg(null); return; }
+    setPinDuration(msg); // open duration dialog
+  };
+  const confirmPin = (msg, hours) => {
+    setPinnedMsg({ ...msg, pinExpiresAt: Date.now() + hours * 3600000, pinHours: hours });
+    setPinDuration(null);
   };
 
   // ── Select contact ─────────────────────────────────────────────────
@@ -1117,10 +1129,25 @@ function MessagesContent() {
 
   // close context menu on escape
   useEffect(() => {
-    const h = (e) => { if (e.key === "Escape") { setContextMenu(null); setShowEmoji(false); setShowSearch(false); setSelectMode(false); setSelectedMsgs([]); if (editingMsg) { setEditingMsg(null); setText(""); } if (replyTo) setReplyTo(null); } };
+    const h = (e) => {
+      if (e.key === "Escape") {
+        setContextMenu(null); setShowEmoji(false); setShowSearch(false);
+        setShowAttach(false); setSelectMode(false); setSelectedMsgs([]);
+        if (editingMsg) { setEditingMsg(null); setText(""); }
+        if (replyTo) setReplyTo(null);
+      }
+    };
     document.addEventListener("keydown", h);
     return () => document.removeEventListener("keydown", h);
   }, [editingMsg, replyTo]);
+
+  // close attach panel on outside click
+  useEffect(() => {
+    if (!showAttach) return;
+    const h = (e) => { if (!e.target.closest(".attach-panel-wrap")) setShowAttach(false); };
+    setTimeout(() => document.addEventListener("mousedown", h), 50);
+    return () => document.removeEventListener("mousedown", h);
+  }, [showAttach]);
 
   return (
     <>
@@ -1300,8 +1327,8 @@ function MessagesContent() {
         {showChat ? (
           <div style={{ flexDirection: "column", background: "var(--chat-bg)", minWidth: 0, position: "relative" }}
             className={`msg-chat${mobileView === "list" ? " mob-hide" : ""}`}>
-            {/* Chat header */}
-            <div style={{ padding: "10px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 10 }}>
+            {/* Chat header - sticky on scroll */}
+            <div style={{ padding: "10px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 20, position: "sticky", top: 0 }}>
               {selectMode ? (
                 <>
                   <button onClick={() => { setSelectMode(false); setSelectedMsgs([]); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4 }}><X size={20}/></button>
@@ -1343,11 +1370,11 @@ function MessagesContent() {
 
             {/* Pinned message banner */}
             {pinnedMsg && (
-              <div style={{ padding: "8px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+              <div style={{ padding: "8px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 8, cursor: "pointer", borderLeft: "3px solid #25d366" }}
                 onClick={() => scrollToMsg(pinnedMsg._id)}>
                 <Pin size={14} style={{ color: "#25d366", flexShrink: 0 }}/>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#25d366" }}>Pinned message</p>
+                  <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#25d366" }}>📌 Pinned message{pinnedMsg.pinHours ? ` · ${pinnedMsg.pinHours === 24 ? "24h" : pinnedMsg.pinHours === 168 ? "7d" : "30d"}` : ""}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pinnedMsg.content || "📎 File"}</p>
                 </div>
                 <button onClick={e => { e.stopPropagation(); setPinnedMsg(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={14}/></button>
@@ -1553,14 +1580,39 @@ function MessagesContent() {
               />
             ) : (
             /* Normal Input bar */
-            <div style={{ padding: "8px 12px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", gap: 6, alignItems: "flex-end", flexShrink: 0 }}>
+            <div className="attach-panel-wrap" style={{ padding: "8px 12px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", gap: 6, alignItems: "flex-end", flexShrink: 0, position: "relative" }}>
+              {/* Hidden file inputs */}
               <input ref={fileRef} type="file" onChange={handleFile} style={{ display: "none" }}
                 accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt"/>
-              <button className="icon-btn" disabled={uploading} onClick={() => fileRef.current?.click()} title="Attach"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--input-bg)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: "var(--text-muted)" }}>
-                {uploading ? <div style={{ width: 14, height: 14, border: "2px solid #94a3b8", borderTopColor: "#25d366", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/> : <Paperclip size={18}/>}
+              <input ref={imgRef} type="file" onChange={handleFile} style={{ display: "none" }} accept="image/*,video/*"/>
+
+              {/* Attach menu panel */}
+              {showAttach && (
+                <div style={{ position: "absolute", bottom: "100%", left: 8, background: "var(--sidebar-bg)", border: "1px solid var(--border-color)", borderRadius: 16, padding: "12px 16px", boxShadow: "0 8px 32px rgba(0,0,0,0.2)", display: "flex", gap: 12, zIndex: 300, animation: "ctxIn 0.15s ease" }}>
+                  {[
+                    { icon: "📷", label: "Photo", color: "#e91e63", action: () => { imgRef.current?.click(); setShowAttach(false); } },
+                    { icon: "📄", label: "Document", color: "#2196f3", action: () => { fileRef.current?.click(); setShowAttach(false); } },
+                    { icon: "🎤", label: "Audio", color: "#9c27b0", action: () => { setIsRecording(true); setShowAttach(false); } },
+                  ].map(item => (
+                    <button key={item.label} onClick={item.action}
+                      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 12 }}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--conv-hover)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                      <div style={{ width: 46, height: 46, borderRadius: "50%", background: item.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{item.icon}</div>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600 }}>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* + button (attach) */}
+              <button className="icon-btn" onClick={() => { setShowAttach(p => !p); setShowEmoji(false); }} title="Attach"
+                style={{ width: 38, height: 38, borderRadius: "50%", background: showAttach ? "#e7f9ed" : "var(--input-bg)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: showAttach ? "#25d366" : "var(--text-muted)", transition: "all 0.2s", transform: showAttach ? "rotate(45deg)" : "rotate(0deg)" }}>
+                {uploading ? <div style={{ width: 14, height: 14, border: "2px solid #94a3b8", borderTopColor: "#25d366", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/> : <Plus size={20}/>}
               </button>
-              <button className="icon-btn" onClick={() => setShowEmoji(p => !p)} title="Emoji"
+
+              {/* Emoji button */}
+              <button className="icon-btn" onClick={() => { setShowEmoji(p => !p); setShowAttach(false); }} title="Emoji"
                 style={{ width: 38, height: 38, borderRadius: "50%", background: showEmoji ? "#e7f9ed" : "var(--input-bg)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: showEmoji ? "#25d366" : "var(--text-muted)" }}>
                 <Smile size={20}/>
               </button>
@@ -1650,6 +1702,31 @@ function MessagesContent() {
       {showStarred && <StarredPanel messages={messages} myId={myId} onClose={() => setShowStarred(false)} onGoTo={scrollToMsg}/>}
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)}/>}
       {showNewConv && <NewConvPanel myId={myId} onClose={() => setShowNew(false)} onSelect={(u) => { selectContact(u); setActiveId(u._id); setActiveInfo(u); }}/>}
+
+      {/* Pin Duration Dialog */}
+      {pinDuration && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+          <div style={{ background: "var(--sidebar-bg)", borderRadius: 20, width: "90%", maxWidth: 380, padding: "28px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", animation: "scIn 0.2s ease" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "var(--text-heading)" }}>Choose how long your pin lasts</h3>
+            <p style={{ margin: "0 0 20px", fontSize: 14, color: "var(--text-muted)" }}>You can unpin at any time.</p>
+            {[{ label: "24 hours", hours: 24 }, { label: "7 days", hours: 168 }, { label: "30 days", hours: 720 }].map(opt => (
+              <div key={opt.hours} onClick={() => confirmPin(pinDuration, opt.hours)}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", borderRadius: 14, cursor: "pointer", marginBottom: 8, border: "1px solid var(--border-color)", transition: "background 0.1s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--conv-hover)"}
+                onMouseLeave={e => e.currentTarget.style.background = "none"}>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #25d366", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#25d366" }}/>
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text-heading)" }}>{opt.label}</span>
+              </div>
+            ))}
+            <button onClick={() => setPinDuration(null)}
+              style={{ width: "100%", marginTop: 8, padding: "12px", borderRadius: 12, border: "none", background: "none", color: "#25d366", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Full emoji picker triggered from context menu + button */}
       {showCtxEmojiPicker && ctxReactMsgId && (
