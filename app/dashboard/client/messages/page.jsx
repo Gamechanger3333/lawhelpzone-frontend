@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 // app/dashboard/[role]/messages/page.jsx
 // ✅ WhatsApp-parity feature set:
 //   ✅ Reply to message (quoted reply bubble)
@@ -520,6 +521,224 @@ function SearchPanel({ messages, myId, onClose, onGoTo }) {
   );
 }
 
+// ─── Format seconds → m:ss ───────────────────────────────────────────
+const fmtDur = (s) => {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+};
+
+// ─── Voice Note Recorder (input bar replacement while recording) ─────
+function VoiceRecorder({ onSend, onCancel }) {
+  const [elapsed,    setElapsed]   = useState(0);
+  const [bars,       setBars]      = useState(Array(40).fill(3));
+  const mediaRef   = useRef(null);
+  const chunksRef  = useRef([]);
+  const timerRef   = useRef(null);
+  const analyserRef = useRef(null);
+  const animRef    = useRef(null);
+  const streamRef  = useRef(null);
+
+  useEffect(() => {
+    let stopped = false;
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return; }
+        streamRef.current = stream;
+
+        // Live waveform via Web Audio API
+        const ctx      = new (window.AudioContext || window.webkitAudioContext)();
+        const src      = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+        src.connect(analyser);
+        analyserRef.current = analyser;
+
+        const drawBars = () => {
+          if (stopped) return;
+          const data = new Uint8Array(analyser.frequencyBinCount);
+          analyser.getByteFrequencyData(data);
+          // Map 64 bins → 40 bars, normalize 0-255 → 3-32px
+          const step = Math.floor(data.length / 40);
+          setBars(Array.from({ length: 40 }, (_, i) => {
+            const v = data[i * step] || 0;
+            return Math.max(3, Math.round((v / 255) * 32));
+          }));
+          animRef.current = requestAnimationFrame(drawBars);
+        };
+        drawBars();
+
+        // MediaRecorder
+        const mr = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+        mediaRef.current = mr;
+        mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+        mr.start(100);
+
+        // Timer
+        timerRef.current = setInterval(() => setElapsed(p => p + 1), 1000);
+      } catch (err) {
+        console.error("Mic access denied:", err);
+        onCancel();
+      }
+    })();
+
+    return () => {
+      stopped = true;
+      cancelAnimationFrame(animRef.current);
+      clearInterval(timerRef.current);
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  }, []);
+
+  const stop = () => {
+    clearInterval(timerRef.current);
+    cancelAnimationFrame(animRef.current);
+    return new Promise(resolve => {
+      const mr = mediaRef.current;
+      if (!mr || mr.state === "inactive") { resolve(null); return; }
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        streamRef.current?.getTracks().forEach(t => t.stop());
+        resolve(blob);
+      };
+      mr.stop();
+    });
+  };
+
+  const handleSend = async () => {
+    const blob = await stop();
+    if (blob) onSend(blob, elapsed);
+  };
+
+  const handleCancel = async () => {
+    await stop();
+    onCancel();
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", flexShrink: 0 }}>
+      {/* Cancel */}
+      <button onClick={handleCancel}
+        style={{ width: 38, height: 38, borderRadius: "50%", background: "#fef2f2", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", flexShrink: 0 }}>
+        <Trash2 size={17}/>
+      </button>
+
+      {/* Timer */}
+      <span style={{ fontSize: 13, fontWeight: 700, color: "#ef4444", fontVariantNumeric: "tabular-nums", flexShrink: 0, minWidth: 36 }}>
+        {fmtDur(elapsed)}
+      </span>
+
+      {/* Live waveform */}
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 2, height: 38, overflow: "hidden" }}>
+        {bars.map((h, i) => (
+          <div key={i} style={{ width: 3, height: h, borderRadius: 2, background: "#ef4444", transition: "height 0.08s ease", flexShrink: 0 }}/>
+        ))}
+      </div>
+
+      {/* Mic pulse indicator */}
+      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 0 3px rgba(239,68,68,0.25)", animation: "micPulse 1s ease infinite", flexShrink: 0 }}/>
+
+      {/* Send */}
+      <button onClick={handleSend}
+        style={{ width: 42, height: 42, borderRadius: "50%", background: "#25d366", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", flexShrink: 0 }}>
+        <Send size={18}/>
+      </button>
+    </div>
+  );
+}
+
+// ─── Audio Message Bubble ────────────────────────────────────────────
+function AudioBubble({ src, mine, duration = 0 }) {
+  const [playing,  setPlaying]  = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [curTime,  setCurTime]  = useState(0);
+  const [dur,      setDur]      = useState(duration);
+  const [bars,     setBars]     = useState([]);
+  const audioRef  = useRef(null);
+  const ctxRef    = useRef(null);
+
+  // Decode waveform once
+  useEffect(() => {
+    if (!src) return;
+    (async () => {
+      try {
+        const resp = await fetch(src);
+        const buf  = await resp.arrayBuffer();
+        const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+        ctxRef.current = ctx;
+        const decoded = await ctx.decodeAudioData(buf);
+        const raw  = decoded.getChannelData(0);
+        const step = Math.floor(raw.length / 40);
+        const b    = Array.from({ length: 40 }, (_, i) => {
+          let sum = 0;
+          for (let j = 0; j < step; j++) sum += Math.abs(raw[i * step + j] || 0);
+          return Math.max(3, Math.round((sum / step) * 60));
+        });
+        setBars(b);
+        setDur(decoded.duration);
+      } catch {}
+    })();
+  }, [src]);
+
+  const toggle = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (playing) { a.pause(); setPlaying(false); }
+    else { a.play(); setPlaying(true); }
+  };
+
+  const onTimeUpdate = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    setCurTime(a.currentTime);
+    setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0);
+  };
+
+  const onEnded = () => { setPlaying(false); setProgress(0); setCurTime(0); if (audioRef.current) audioRef.current.currentTime = 0; };
+
+  const seek = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct  = (e.clientX - rect.left) / rect.width;
+    const a    = audioRef.current;
+    if (a && a.duration) { a.currentTime = pct * a.duration; setProgress(pct * 100); }
+  };
+
+  const barColor = mine
+    ? (i) => i / 40 < progress / 100 ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)"
+    : (i) => i / 40 < progress / 100 ? "#25d366" : "var(--border-color)";
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220, maxWidth: 280 }}>
+      <audio ref={audioRef} src={src} onTimeUpdate={onTimeUpdate} onEnded={onEnded} onLoadedMetadata={e => setDur(e.target.duration)} preload="metadata"/>
+
+      {/* Play/Pause button */}
+      <button onClick={toggle}
+        style={{ width: 38, height: 38, borderRadius: "50%", background: mine ? "rgba(255,255,255,0.2)" : "var(--input-bg)", border: mine ? "none" : "1px solid var(--border-color)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: mine ? "#fff" : "#25d366", flexShrink: 0 }}>
+        {playing
+          ? <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="4" height="12" rx="1"/><rect x="9" y="1" width="4" height="12" rx="1"/></svg>
+          : <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><polygon points="2,1 13,7 2,13"/></svg>
+        }
+      </button>
+
+      {/* Waveform + progress */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+        <div onClick={seek} style={{ display: "flex", alignItems: "center", gap: 1.5, height: 28, cursor: "pointer" }}>
+          {(bars.length ? bars : Array(40).fill(8)).map((h, i) => (
+            <div key={i} style={{ width: 3, height: Math.min(h, 28), borderRadius: 2, background: barColor(i), transition: "background 0.1s", flexShrink: 0 }}/>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 10, color: mine ? "rgba(233,237,239,0.7)" : "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>
+            {playing ? fmtDur(curTime) : fmtDur(dur)}
+          </span>
+          <span style={{ fontSize: 10, color: mine ? "rgba(233,237,239,0.5)" : "var(--text-muted)" }}>🎤</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── File Upload ─────────────────────────────────────────────────────
 async function uploadFile(file) {
   const fd = new FormData();
@@ -533,7 +752,7 @@ async function uploadFile(file) {
 // ═════════════════════════════════════════════════════════════════════
 // MAIN PAGE
 // ═════════════════════════════════════════════════════════════════════
-export default function MessagesPage() {
+function MessagesContent() {
   const { user }     = useAppSelector(s => s.auth);
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -572,6 +791,8 @@ export default function MessagesPage() {
   const [recentEmojis, setRecentEmojis] = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [filterTab,    setFilterTab]   = useState("all"); // all | unread
+  const [isRecording,  setIsRecording]  = useState(false);
+  const [voiceUploading, setVoiceUploading] = useState(false);
 
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
@@ -680,13 +901,13 @@ export default function MessagesPage() {
       _id: `opt-${Date.now()}`, senderId: myId, receiverId, content,
       createdAt: new Date().toISOString(), pending: true,
       ...(replySnap ? { replyTo: replySnap } : {}),
-      ...(attachment ? { fileUrl: attachment.url, fileName: attachment.name, type: attachment.type?.startsWith("image/") ? "image" : "file" } : {}),
+      ...(attachment ? { fileUrl: attachment.url, fileName: attachment.name, type: attachment.type?.startsWith("image/") ? "image" : attachment.type === "audio" ? "audio" : "file", audioDuration: attachment.duration } : {}),
     };
     setMsgs(p => [...p, opt]);
 
     try {
       const body = { receiverId, content };
-      if (attachment) { body.fileUrl = attachment.url; body.fileName = attachment.name; body.type = attachment.type?.startsWith("image/") ? "image" : "file"; }
+      if (attachment) { body.fileUrl = attachment.url; body.fileName = attachment.name; body.type = attachment.type?.startsWith("image/") ? "image" : attachment.type === "audio" ? "audio" : "file"; }
       if (replySnap) body.replyToId = replySnap._id;
       const r = await fetch(`${API}/api/messages`, { method: "POST", credentials: "include", headers: HJ(), body: JSON.stringify(body) });
       if (r.ok) {
@@ -709,6 +930,21 @@ export default function MessagesPage() {
     try { const att = await uploadFile(file); await sendMsg(att); }
     catch { alert("Upload failed."); }
     finally { setUpload(false); }
+  };
+
+  // ── Send voice note ────────────────────────────────────────────────
+  const handleVoiceSend = async (blob, durationSecs) => {
+    setIsRecording(false);
+    setVoiceUploading(true);
+    try {
+      const file = new File([blob], `voice-note-${Date.now()}.webm`, { type: "audio/webm" });
+      const att  = await uploadFile(file);
+      // Store duration in fileName field for the bubble
+      att.type = "audio";
+      att.duration = durationSecs;
+      await sendMsg(att);
+    } catch { alert("Voice upload failed."); }
+    finally { setVoiceUploading(false); }
   };
 
   // ── React to message ───────────────────────────────────────────────
@@ -885,6 +1121,7 @@ export default function MessagesPage() {
         @keyframes slideRight{from{transform:translateX(24px);opacity:0}to{transform:translateX(0);opacity:1}}
         @keyframes ctxIn{from{transform:scale(0.93);opacity:0}to{transform:scale(1);opacity:1}}
         @keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+        @keyframes micPulse{0%,100%{box-shadow:0 0 0 3px rgba(239,68,68,0.25)}50%{box-shadow:0 0 0 7px rgba(239,68,68,0.08)}}
         .msg-b{animation:fd 0.15s ease;}
         .conv-row{transition:background 0.12s;cursor:pointer;}
         .conv-row:hover{background:var(--conv-hover)!important;}
@@ -1126,7 +1363,10 @@ export default function MessagesPage() {
                             ) : (
                               <>
                                 {msg.content && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, wordBreak: "break-word" }}>{msg.content}{msg.edited && <span style={{ fontSize: 10, opacity: 0.6, marginLeft: 5 }}>(edited)</span>}</p>}
-                                {msg.fileUrl && (
+                                {msg.fileUrl && msg.type === "audio" && (
+                                  <AudioBubble src={msg.fileUrl} mine={mine} duration={msg.audioDuration || 0}/>
+                                )}
+                                {msg.fileUrl && msg.type !== "audio" && (
                                   isImg ? (
                                     <img src={msg.fileUrl} alt={msg.fileName || "image"} onClick={() => setLightbox(msg.fileUrl)}
                                       style={{ maxWidth: 240, maxHeight: 220, borderRadius: 10, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0, cursor: "zoom-in" }}/>
@@ -1231,7 +1471,14 @@ export default function MessagesPage() {
               </div>
             )}
 
-            {/* Input bar */}
+            {/* Voice Recorder UI (replaces input bar while recording) */}
+            {isRecording ? (
+              <VoiceRecorder
+                onSend={handleVoiceSend}
+                onCancel={() => setIsRecording(false)}
+              />
+            ) : (
+            /* Normal Input bar */
             <div style={{ padding: "8px 12px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", gap: 6, alignItems: "flex-end", flexShrink: 0 }}>
               <input ref={fileRef} type="file" onChange={handleFile} style={{ display: "none" }}
                 accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.txt"/>
@@ -1262,17 +1509,30 @@ export default function MessagesPage() {
                 placeholder={editingMsg ? "Edit message…" : `Message ${activeName}…`}
                 rows={1}
                 style={{ flex: 1, padding: "9px 13px", borderRadius: 20, border: "none", fontSize: 14, outline: "none", resize: "none", lineHeight: 1.5, maxHeight: 100, overflowY: "auto", background: "var(--input-bg)", color: "var(--text-primary)", fontFamily: "inherit" }}/>
-              <button onClick={() => {
-                if (editingMsg) {
-                  const content = editingMsg._editContent ?? editingMsg.content;
-                  setText(content); sendMsg();
-                } else sendMsg();
-              }}
-                disabled={(!text.trim() && !editingMsg && !uploading) || sending} className="send-btn"
-                style={{ width: 38, height: 38, borderRadius: "50%", background: (text.trim() || editingMsg) ? "#25d366" : "var(--input-bg)", color: (text.trim() || editingMsg) ? "#fff" : "var(--text-muted)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
-                {sending ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.5)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/> : <Send size={18}/>}
-              </button>
+
+              {/* Send OR Mic button — mic shown when input is empty */}
+              {(text.trim() || editingMsg) ? (
+                <button onClick={() => {
+                  if (editingMsg) { const content = editingMsg._editContent ?? editingMsg.content; setText(content); sendMsg(); }
+                  else sendMsg();
+                }}
+                  disabled={sending} className="send-btn"
+                  style={{ width: 42, height: 42, borderRadius: "50%", background: "#25d366", color: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                  {sending ? <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.5)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/> : <Send size={18}/>}
+                </button>
+              ) : (
+                <button
+                  onMouseDown={() => setIsRecording(true)}
+                  title="Hold to record voice note"
+                  disabled={voiceUploading}
+                  style={{ width: 42, height: 42, borderRadius: "50%", background: voiceUploading ? "var(--input-bg)" : "#25d366", color: voiceUploading ? "var(--text-muted)" : "#fff", border: "none", cursor: voiceUploading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                  {voiceUploading
+                    ? <div style={{ width: 14, height: 14, border: "2px solid #94a3b8", borderTopColor: "#25d366", borderRadius: "50%", animation: "spin 0.8s linear infinite" }}/>
+                    : <Mic size={20}/>}
+                </button>
+              )}
             </div>
+            )}
           </div>
         ) : (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--chat-bg)", flexDirection: "column", gap: 16 }}>
@@ -1315,5 +1575,13 @@ export default function MessagesPage() {
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)}/>}
       {showNewConv && <NewConvPanel myId={myId} onClose={() => setShowNew(false)} onSelect={(u) => { selectContact(u); setActiveId(u._id); setActiveInfo(u); }}/>}
     </>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={<div style={{ height: "calc(100vh - 112px)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted,#64748b)", fontSize: 14 }}>Loading messages…</div>}>
+      <MessagesContent />
+    </Suspense>
   );
 }
