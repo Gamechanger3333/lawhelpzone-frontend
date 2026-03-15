@@ -801,6 +801,7 @@ function MessagesContent() {
   const [filterTab,    setFilterTab]   = useState("all"); // all | unread
   const [showCtxEmojiPicker, setShowCtxEmojiPicker] = useState(false);
   const [ctxReactMsgId,      setCtxReactMsgId]      = useState(null);
+  const [mobileView,         setMobileView]          = useState("list"); // "list" | "chat"
   const [isRecording,  setIsRecording]  = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
 
@@ -1009,6 +1010,7 @@ function MessagesContent() {
   const selectContact = (c) => {
     setActiveId(c._id); setActiveInfo(c); setSearch(""); setShowNew(false);
     setSelectMode(false); setSelectedMsgs([]); setReplyTo(null); setEditingMsg(null);
+    setMobileView("chat");
   };
 
   // ── Scroll handling ────────────────────────────────────────────────
@@ -1146,12 +1148,29 @@ function MessagesContent() {
         .typing-dot:nth-child(3){animation-delay:.4s}
         .msg-selected{background:rgba(37,211,102,0.12)!important;}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
+
+        /* ── Mobile responsive ── */
+        .msg-sidebar { display: flex; flex-direction: column; }
+        .msg-chat    { display: flex; flex: 1; }
+        .mob-hide    { display: none !important; }
+        @media (max-width: 639px) {
+          .msg-sidebar { width: 100% !important; flex-shrink: 0; }
+          .msg-chat    { width: 100% !important; position: absolute; inset: 0; }
+          .mobile-back-btn { display: flex !important; }
+        }
+        @media (min-width: 640px) {
+          .msg-sidebar { width: 300px !important; flex-shrink: 0; display: flex !important; }
+          .msg-chat    { flex: 1; display: flex !important; }
+          .mob-hide    { display: flex !important; }
+          .mobile-back-btn { display: none !important; }
+        }
       `}</style>
 
-      <div style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s" }}>
+      <div style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s", position: "relative" }}>
 
         {/* ══════════════ SIDEBAR ══════════════ */}
-        <div style={{ width: 300, display: "flex", flexDirection: "column", background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)", flexShrink: 0 }}>
+        <div style={{ flexDirection: "column", background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)", flexShrink: 0 }}
+          className={`msg-sidebar${mobileView === "chat" ? " mob-hide" : ""}`}>
           {/* Header */}
           <div style={{ padding: "14px 14px 10px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -1241,7 +1260,8 @@ function MessagesContent() {
 
         {/* ══════════════ CHAT AREA ══════════════ */}
         {showChat ? (
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "var(--chat-bg)", minWidth: 0, position: "relative" }}>
+          <div style={{ flexDirection: "column", background: "var(--chat-bg)", minWidth: 0, position: "relative" }}
+            className={`msg-chat${mobileView === "list" ? " mob-hide" : ""}`}>
             {/* Chat header */}
             <div style={{ padding: "10px 16px", background: "var(--header-bg)", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0, zIndex: 10 }}>
               {selectMode ? (
@@ -1259,6 +1279,11 @@ function MessagesContent() {
                 </>
               ) : (
                 <>
+                  {/* Mobile back button */}
+                  <button className="mobile-back-btn" onClick={() => setMobileView("list")}
+                    style={{ width: 36, height: 36, borderRadius: "50%", background: "none", border: "none", cursor: "pointer", display: "none", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}>
+                    <ChevronLeft size={22}/>
+                  </button>
                   <div onClick={() => setProfileU(activeInfo)} style={{ position: "relative", flexShrink: 0, cursor: "pointer" }}>
                     <Avatar user={activeInfo} size={40}/>
                     <span style={{ position: "absolute", bottom: 0, right: 0, width: 11, height: 11, borderRadius: "50%", background: activeInfo?.isOnline ? "#25d366" : "#94a3b8", border: "2px solid var(--header-bg)" }}/>
@@ -1352,8 +1377,7 @@ function MessagesContent() {
                           {msg.replyTo && !isDeleted && (
                             <div onClick={() => msg.replyTo._id && scrollToMsg(msg.replyTo._id)}
                               style={{ padding: "6px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(0,0,0,0.12)" : "var(--input-bg)", borderLeft: `3px solid ${mine ? "rgba(255,255,255,0.5)" : activeDot}`, marginBottom: -2, cursor: "pointer" }}>
-                              <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: mine ? "rgba(255,255,255,0.8)" : activeDot }}>{String(msg.replyTo.senderId) === myId ? "You" : activeName}</p>
-                              <p style={{ margin: "2px 0 0", fontSize: 12, color: mine ? "rgba(255,255,255,0.7)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{msg.replyTo.content || "📎 File"}</p>
+                              <p style={{ margin: 0, fontSize: 12, color: mine ? "rgba(255,255,255,0.7)" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>{msg.replyTo.content || "📎 File"}</p>
                             </div>
                           )}
 
@@ -1453,7 +1477,6 @@ function MessagesContent() {
               <div style={{ padding: "8px 14px", background: "var(--header-bg)", borderTop: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 10 }}>
                 <Reply size={16} style={{ color: "#25d366", flexShrink: 0 }}/>
                 <div style={{ flex: 1, minWidth: 0, borderLeft: "3px solid #25d366", paddingLeft: 8 }}>
-                  <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#25d366" }}>{String(replyTo.senderId?._id || replyTo.senderId) === myId ? "You" : activeName}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{replyTo.content || "📎 File"}</p>
                 </div>
                 <button onClick={() => setReplyTo(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16}/></button>
@@ -1545,7 +1568,8 @@ function MessagesContent() {
             )}
           </div>
         ) : (
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--chat-bg)", flexDirection: "column", gap: 16 }}>
+          <div style={{ flexDirection: "column", alignItems: "center", justifyContent: "center", background: "var(--chat-bg)", gap: 16, minHeight: "100%" }}
+            className={`msg-chat${mobileView === "list" ? " mob-hide" : ""}`}>
             <div style={{ width: 100, height: 100, borderRadius: "50%", background: "linear-gradient(135deg,#25d366,#128c7e)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 12px 40px rgba(37,211,102,0.3)", animation: "pop 0.4s ease", fontSize: 46 }}>💬</div>
             <div style={{ textAlign: "center" }}>
               <p style={{ color: "var(--text-heading)", fontSize: 20, fontWeight: 800, margin: "0 0 6px" }}>LawHelpZone Messages</p>
