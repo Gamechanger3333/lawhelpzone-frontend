@@ -1,5 +1,5 @@
 "use client";
-// v2026-03-15-NUCLEAR — deploy this to ALL roles
+// v2026-03-14-FIXED
 // Fixes applied:
 // 1. ✅ "Attachment" label removed from all messages
 // 2. ✅ Voice notes: recording timer visible from 0:00, proper WhatsApp-style waveform
@@ -167,10 +167,8 @@ function AudioBubble({ src, mine }) {
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const [elapsed,  setElapsed]  = useState(0);
-  // If src is empty/null, start in error state immediately — no audio element
-  const [loadErr,  setLoadErr]  = useState(!src);
+  const [loadErr,  setLoadErr]  = useState(false);
   const audioRef = useRef(null);
-  const hasSrc = !!src; // only mount <audio> when we have a real src
 
   const toggle = () => {
     const a = audioRef.current;
@@ -218,16 +216,13 @@ function AudioBubble({ src, mine }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 220, maxWidth: 270, padding: "2px 0" }}>
-      {/* Only render <audio> when we have a real src — prevents empty-src console error */}
-      {hasSrc && (
-        <audio
-          ref={audioRef}
-          src={src}
-          preload="auto"
-          style={{ display: "none" }}
-          onError={() => setLoadErr(true)}
-        />
-      )}
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="auto"
+        style={{ display: "none" }}
+        onError={() => setLoadErr(true)}
+      />
       {/* Play/Pause button */}
       <button onClick={toggle}
         style={{ width: 40, height: 40, borderRadius: "50%", border: "none",
@@ -914,11 +909,6 @@ function MessagesContent() {
         @keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
         @keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
         @keyframes recPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(1.2)}}
-
-        /* ── NUCLEAR: hide any stray "Voice message" / "Attachment" label chips ── */
-        /* These target old DB content rendered by ANY version of this page */
-        .msg-file-badge, .file-type-badge, .attachment-badge { display: none !important; }
-        .msg-b > div[class*="file"], .msg-b > span[class*="file"] { display: none !important; }
         .msg-b{animation:fd 0.16s ease;}
         .conv-row{transition:background 0.12s;cursor:pointer;}
         .conv-row:hover{background:var(--conv-hover)!important;}
@@ -1093,53 +1083,19 @@ function MessagesContent() {
                       const mine     = String(msg.senderId?._id || msg.senderId) === myId;
                       const rawUrl   = msg.fileUrl?.startsWith("data:") ? msg.fileUrl : fixUrl(msg.fileUrl);
                       const fileUrl  = rawUrl && (rawUrl.startsWith("http") || rawUrl.startsWith("data:")) ? rawUrl : null;
-
-                      // ── isAudio: catches ALL voice messages regardless of how they were stored ──
-                      const _voiceRe = /voice\s*(message|note|recording)?/i;
-                      const _audioExtRe = /\.(webm|ogg|mp3|wav|m4a|aac|flac|opus)(\?|$)/i;
-                      const isAudio = (
-                        msg.type === "audio" ||
-                        (msg.type || "").startsWith("audio/") ||
-                        _audioExtRe.test(msg.fileUrl || "") ||
-                        _audioExtRe.test(msg.fileName || "") ||
-                        (msg.fileUrl || "").startsWith("data:audio") ||
-                        _voiceRe.test(msg.fileName || "") ||
-                        _voiceRe.test(msg.content || "")
-                      );
-
-                      // ── SKIP all ghost/placeholder messages ──────────────────────────────
-                      // Ghost Voice: isAudio but no fileUrl at all
-                      const isGhostVoice = isAudio && !fileUrl && !msg.fileUrl;
-                      if (isGhostVoice) return null;
-
-                      // Ghost Attachment: any message where BOTH content AND fileName
-                      // are placeholders — these are old notification/label messages
-                      // that should never have been stored as chat messages
-                      const contentIsJunk   = isPlaceholder(msg.content);
-                      const fileNameIsJunk  = !msg.fileName || isPlaceholder(msg.fileName);
-                      const isGhostMsg = contentIsJunk && fileNameIsJunk && !msg.fileUrl?.startsWith("data:");
-                      if (isGhostMsg) return null;
-
-                      const isImg = !isAudio && !!fileUrl && (
-                        msg.type === "image" ||
-                        /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(msg.fileUrl || "") ||
-                        /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.fileName || "")
-                      );
-                      // ✅ CLEAN content — NEVER show any text for audio msgs
-                      const content  = isAudio ? "" : cleanContent(msg.content);
-                      // ── Skip pure-placeholder text messages (no file, just "Voice message" text)
-                      if (!isAudio && !fileUrl && !content) return null;
+                      const isAudio  = fileUrl && isAudioMsg(msg);
+                      const isImg    = fileUrl && !isAudio && (msg.type === "image" || /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.fileName || ""));
+                      // ✅ CLEAN content — remove "Attachment" labels
+                      const content  = cleanContent(msg.content);
                       const reactions= msg.reactions || {};
                       const hasR     = Object.keys(reactions).length > 0;
                       const isStarred= starredMsgs.has(msg._id);
 
-                      // WhatsApp-style: audio = dark green (sent), light green (received)
+                      // WhatsApp-style: audio = green tinted bubble (sent), white bubble (received)
                       const bubbleBg = mine
                         ? (isAudio ? "#005c4b" : "#3b82f6")
                         : (isAudio ? "#f0fdf4" : "var(--bubble-other-bg)");
                       const bubbleColor = mine ? "#fff" : "var(--bubble-other-color)";
-                      // Audio bubbles need less padding
-                      const bubblePad  = (isImg || isAudio) ? "8px 12px" : "9px 13px";
 
                       return (
                         <div key={msg._id || i} id={`msg-${msg._id}`} className="msg-wrap"
@@ -1155,13 +1111,13 @@ function MessagesContent() {
                             {/* Reply quote */}
                             {msg.replyTo && (
                               <div style={{ padding: "5px 10px", borderRadius: "10px 10px 0 0", background: mine ? "rgba(59,130,246,0.12)" : "rgba(0,0,0,0.06)", borderLeft: `3px solid ${mine ? "#3b82f6" : "#94a3b8"}`, marginBottom: -2 }}>
-                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {cleanContent(msg.replyTo.content) || "🎤 Voice message"}</p>
+                                <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>↩ {msg.replyTo.content || "Voice message"}</p>
                               </div>
                             )}
 
                             {/* Bubble */}
                             <div className="msg-b" style={{
-                              padding: bubblePad,
+                              padding: isImg ? 4 : "9px 13px",
                               borderRadius: msg.replyTo ? (mine ? "0 14px 4px 14px" : "14px 0 14px 4px") : (mine ? "18px 18px 4px 18px" : "4px 18px 18px 18px"),
                               background: bubbleBg,
                               color: bubbleColor,
@@ -1182,9 +1138,9 @@ function MessagesContent() {
                                 </p>
                               )}
 
-                              {/* ✅ Audio bubble — always renders for audio, never shows text label */}
-                              {isAudio && (
-                                <AudioBubble src={fileUrl || ""} mine={mine} />
+                              {/* ✅ Audio bubble — WhatsApp style */}
+                              {fileUrl && isAudio && (
+                                <AudioBubble src={fileUrl} mine={mine} />
                               )}
 
                               {/* Image */}
@@ -1194,7 +1150,7 @@ function MessagesContent() {
                                 </a>
                               )}
 
-                              {/* File download — never for audio/voice messages */}
+                              {/* File download — no "Voice message" / "Attachment" label */}
                               {fileUrl && !isAudio && !isImg && (
                                 <a href={fileUrl} target="_blank" rel="noreferrer"
                                   style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#fff" : "var(--text-heading)", marginTop: content ? 6 : 0 }}>
