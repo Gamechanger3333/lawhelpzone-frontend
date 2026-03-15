@@ -171,13 +171,27 @@ function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onFor
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Quick reactions row
+  // Quick reactions row — centered overlay like WhatsApp
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+  const menuW = isMobile ? Math.min(window.innerWidth - 32, 320) : 260;
+  const menuX = isMobile
+    ? (window.innerWidth - menuW) / 2
+    : Math.min(Math.max(x, 8), window.innerWidth - menuW - 8);
+  const menuY = isMobile
+    ? Math.max((window.innerHeight - 460) / 2, 20)
+    : Math.min(Math.max(y - 20, 8), window.innerHeight - 460);
+
   return (
-    <div ref={ref} style={{
-      position: "fixed", left: Math.min(x, window.innerWidth - 220), top: Math.min(y, window.innerHeight - 340),
-      zIndex: 9999, background: "var(--sidebar-bg)", borderRadius: 14, boxShadow: "0 8px 40px rgba(0,0,0,0.22)",
-      border: "1px solid var(--border-color)", overflow: "hidden", minWidth: 200, animation: "ctxIn 0.15s ease",
-    }}>
+    <>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }}/>
+      {/* Menu */}
+      <div ref={ref} style={{
+        position: "fixed", left: menuX, top: menuY, width: menuW,
+        zIndex: 9999, background: "var(--sidebar-bg)", borderRadius: 16,
+        boxShadow: "0 12px 48px rgba(0,0,0,0.35)",
+        border: "1px solid var(--border-color)", overflow: "hidden", animation: "ctxIn 0.18s ease",
+      }}>
       {/* Quick reactions */}
       <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderBottom: "1px solid var(--border-color)", background: "var(--input-bg)", alignItems: "center" }}>
         {QUICK_REACTIONS.map(e => (
@@ -216,6 +230,7 @@ function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onFor
         </button>
       ))}
     </div>
+    </>
   );
 }
 
@@ -1150,23 +1165,46 @@ function MessagesContent() {
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border-color);border-radius:4px}
 
         /* ── Mobile responsive ── */
-        .msg-sidebar { display: flex; flex-direction: column; }
-        .msg-chat    { display: flex; flex: 1; }
-        .mob-hide    { display: none !important; }
-        @media (max-width: 639px) {
-          .msg-sidebar { width: 100% !important; flex-shrink: 0; }
-          .msg-chat    { width: 100% !important; position: absolute; inset: 0; }
-          .mobile-back-btn { display: flex !important; }
+        .msg-sidebar { display:flex; flex-direction:column; flex-shrink:0; }
+        .msg-chat    { display:flex; flex:1; flex-direction:column; min-width:0; }
+        .mob-hide    { display:none !important; }
+
+        @media (max-width:639px){
+          .msg-sidebar{
+            position:absolute; inset:0; z-index:10;
+            width:100% !important; height:100%;
+            border-right:none !important;
+          }
+          .msg-chat{
+            position:absolute; inset:0; z-index:10;
+            width:100% !important; height:100%;
+          }
+          .mob-hide{ display:none !important; }
+          .mobile-back-btn{ display:flex !important; }
+
+          /* Tighter bubbles on mobile */
+          .msg-b > div { max-width:82% !important; }
+
+          /* Input bar tighter */
+          .msg-inp{ font-size:15px; }
         }
-        @media (min-width: 640px) {
-          .msg-sidebar { width: 300px !important; flex-shrink: 0; display: flex !important; }
-          .msg-chat    { flex: 1; display: flex !important; }
-          .mob-hide    { display: flex !important; }
-          .mobile-back-btn { display: none !important; }
+        @media (min-width:640px){
+          .msg-sidebar{ width:300px !important; display:flex !important; }
+          .msg-chat   { display:flex !important; flex:1; }
+          .mob-hide   { display:flex !important; }
+          .mobile-back-btn{ display:none !important; }
+        }
+        @media (max-width:639px){
+          .msg-outer{
+            height:calc(100vh - 64px) !important;
+            border-radius:0 !important;
+            border:none !important;
+            margin:0 !important;
+          }
         }
       `}</style>
 
-      <div style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s", position: "relative" }}>
+      <div className="msg-outer" style={{ height: "calc(100vh - 112px)", display: "flex", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)", boxShadow: "0 4px 24px rgba(0,0,0,0.08)", opacity: ready ? 1 : 0, transition: "opacity 0.4s", position: "relative" }}>
 
         {/* ══════════════ SIDEBAR ══════════════ */}
         <div style={{ flexDirection: "column", background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-color)", flexShrink: 0 }}
@@ -1382,8 +1420,9 @@ function MessagesContent() {
                           )}
 
                           {/* Bubble */}
+                          {/* eslint-disable-next-line no-unused-vars */}
                           <div style={{
-                            padding: isImg ? 4 : "8px 12px",
+                            padding: (isImg || msg.type === "audio") ? (msg.type === "audio" ? "8px" : 4) : "8px 12px",
                             borderRadius: msg.replyTo ? (mine ? "0 0 4px 14px" : "0 14px 14px 4px") : (mine ? "14px 14px 4px 14px" : "14px 14px 14px 4px"),
                             background: mine ? "#005c4b" : "var(--bubble-other-bg)",
                             color: mine ? "#e9edef" : "var(--bubble-other-color)",
@@ -1400,19 +1439,21 @@ function MessagesContent() {
                                 {msg.fileUrl && msg.type === "audio" && (
                                   <AudioBubble src={msg.fileUrl} mine={mine} duration={msg.audioDuration || 0}/>
                                 )}
-                                {msg.fileUrl && msg.type !== "audio" && (
-                                  isImg ? (
-                                    <img src={msg.fileUrl} alt={msg.fileName || "image"} onClick={() => setLightbox(msg.fileUrl)}
-                                      style={{ maxWidth: 240, maxHeight: 220, borderRadius: 10, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0, cursor: "zoom-in" }}/>
-                                  ) : (
-                                    <a href={msg.fileUrl} target="_blank" rel="noreferrer"
-                                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: mine ? "rgba(255,255,255,0.1)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#e9edef" : "var(--text-heading)", marginTop: msg.content ? 6 : 0 }}>
-                                      <FileText size={18}/><div style={{ minWidth: 0 }}>
-                                        <p style={{ margin: 0, fontSize: 12, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 150 }}>{msg.fileName || "File"}</p>
-                                        <p style={{ margin: 0, fontSize: 10, opacity: 0.7 }}>Tap to download</p>
-                                      </div>
-                                    </a>
-                                  )
+                                {msg.fileUrl && msg.type === "image" && (
+                                  <img src={msg.fileUrl} alt="" onClick={() => setLightbox(msg.fileUrl)}
+                                    style={{ maxWidth: 240, maxHeight: 220, borderRadius: 10, display: "block", objectFit: "cover", marginTop: msg.content ? 6 : 0, cursor: "zoom-in" }}/>
+                                )}
+                                {msg.fileUrl && msg.type !== "audio" && msg.type !== "image" && (
+                                  <a href={msg.fileUrl} target="_blank" rel="noreferrer"
+                                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: mine ? "rgba(255,255,255,0.12)" : "var(--input-bg)", textDecoration: "none", color: mine ? "#e9edef" : "var(--text-heading)", marginTop: msg.content ? 6 : 0, minWidth: 180 }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: 10, background: mine ? "rgba(255,255,255,0.15)" : "#e2e8f0", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                      <FileText size={18} style={{ color: mine ? "#fff" : "#64748b" }}/>
+                                    </div>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
+                                      <p style={{ margin: 0, fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{msg.fileName || "Document"}</p>
+                                      <p style={{ margin: "2px 0 0", fontSize: 11, opacity: 0.65 }}>Tap to open</p>
+                                    </div>
+                                  </a>
                                 )}
                               </>
                             )}
