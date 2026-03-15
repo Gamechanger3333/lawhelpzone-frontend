@@ -160,7 +160,7 @@ function EmojiPicker({ onPick, onClose, recentEmojis = [] }) {
 }
 
 // ─── Context Menu ────────────────────────────────────────────────────
-function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onForward, onStar, onInfo, onPin, onSelect, onReact, onClose }) {
+function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onForward, onStar, onInfo, onPin, onSelect, onReact, onOpenFullEmoji, onClose }) {
   const ref = useRef(null);
   const isMine = String(msg?.senderId?._id || msg?.senderId) === myId;
   const canEdit = isMine && !msg?.deletedForEveryone && ((Date.now() - new Date(msg?.createdAt).getTime()) < 15 * 60000);
@@ -179,7 +179,7 @@ function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onFor
       border: "1px solid var(--border-color)", overflow: "hidden", minWidth: 200, animation: "ctxIn 0.15s ease",
     }}>
       {/* Quick reactions */}
-      <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderBottom: "1px solid var(--border-color)", background: "var(--input-bg)" }}>
+      <div style={{ display: "flex", gap: 6, padding: "10px 12px", borderBottom: "1px solid var(--border-color)", background: "var(--input-bg)", alignItems: "center" }}>
         {QUICK_REACTIONS.map(e => (
           <button key={e} onClick={() => { onReact(e); onClose(); }}
             style={{ width: 34, height: 34, border: "none", background: "none", cursor: "pointer", fontSize: 20, borderRadius: 8, transition: "transform 0.1s" }}
@@ -188,6 +188,13 @@ function ContextMenu({ x, y, msg, myId, onReply, onEdit, onCopy, onDelete, onFor
             {e}
           </button>
         ))}
+        <button onClick={() => { onOpenFullEmoji(); onClose(); }}
+          title="More reactions"
+          style={{ width: 34, height: 34, border: "1px solid var(--border-color)", background: "var(--input-bg)", cursor: "pointer", fontSize: 16, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", transition: "background 0.1s", flexShrink: 0 }}
+          onMouseEnter={el => { el.currentTarget.style.background = "var(--conv-hover)"; el.currentTarget.style.transform = "scale(1.1)"; }}
+          onMouseLeave={el => { el.currentTarget.style.background = "var(--input-bg)"; el.currentTarget.style.transform = "scale(1)"; }}>
+          ➕
+        </button>
       </div>
       {/* Menu items */}
       {[
@@ -523,6 +530,7 @@ function SearchPanel({ messages, myId, onClose, onGoTo }) {
 
 // ─── Format seconds → m:ss ───────────────────────────────────────────
 const fmtDur = (s) => {
+  if (!s || !isFinite(s) || isNaN(s) || s < 0) return "0:00";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
   return `${m}:${sec.toString().padStart(2, "0")}`;
@@ -791,6 +799,8 @@ function MessagesContent() {
   const [recentEmojis, setRecentEmojis] = useState([]);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [filterTab,    setFilterTab]   = useState("all"); // all | unread
+  const [showCtxEmojiPicker, setShowCtxEmojiPicker] = useState(false);
+  const [ctxReactMsgId,      setCtxReactMsgId]      = useState(null);
   const [isRecording,  setIsRecording]  = useState(false);
   const [voiceUploading, setVoiceUploading] = useState(false);
 
@@ -1558,6 +1568,7 @@ function MessagesContent() {
           onEdit={() => { setEditingMsg(contextMenu.msg); setText(contextMenu.msg.content); inputRef.current?.focus(); }}
           onCopy={() => navigator.clipboard?.writeText(contextMenu.msg.content || "")}
           onDelete={() => setDeleteDialog(contextMenu.msg)}
+          onOpenFullEmoji={() => { setCtxReactMsgId(contextMenu.msg._id); setShowCtxEmojiPicker(true); }}
           onForward={() => setForwardMsg(contextMenu.msg)}
           onStar={() => toggleStar(contextMenu.msg._id)}
           onInfo={() => setInfoMsg(contextMenu.msg)}
@@ -1574,6 +1585,20 @@ function MessagesContent() {
       {showStarred && <StarredPanel messages={messages} myId={myId} onClose={() => setShowStarred(false)} onGoTo={scrollToMsg}/>}
       {lightbox && <Lightbox src={lightbox} onClose={() => setLightbox(null)}/>}
       {showNewConv && <NewConvPanel myId={myId} onClose={() => setShowNew(false)} onSelect={(u) => { selectContact(u); setActiveId(u._id); setActiveInfo(u); }}/>}
+
+      {/* Full emoji picker triggered from context menu + button */}
+      {showCtxEmojiPicker && ctxReactMsgId && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(3px)" }}
+          onClick={e => { if (e.target === e.currentTarget) { setShowCtxEmojiPicker(false); setCtxReactMsgId(null); } }}>
+          <div style={{ background: "var(--sidebar-bg)", borderRadius: 18, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", border: "1px solid var(--border-color)", animation: "scIn 0.2s ease" }}>
+            <div style={{ padding: "10px 14px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-heading)" }}>React to message</span>
+              <button onClick={() => { setShowCtxEmojiPicker(false); setCtxReactMsgId(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex" }}><X size={16}/></button>
+            </div>
+            <EmojiPicker recentEmojis={recentEmojis} onClose={() => { setShowCtxEmojiPicker(false); setCtxReactMsgId(null); }} onPick={(e) => { handleReact(ctxReactMsgId, e); setShowCtxEmojiPicker(false); setCtxReactMsgId(null); }}/>
+          </div>
+        </div>
+      )}
     </>
   );
 }
