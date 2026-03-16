@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertTriangle, X, RefreshCw, ChevronRight, Search,
   DollarSign,
 } from "lucide-react";
-import StripeSetupBanner from "@/components/payment/StripeSetupBanner";
+import StripeSetupBanner from "@/app/components/payment/StripeSetupBanner";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);

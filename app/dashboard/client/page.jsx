@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, Scale, Star, ChevronRight, RefreshCw,
   X, FileText, UserCheck, Users, ArrowRight, Search,
 } from "lucide-react";
-import CheckoutModal from "@/components/payment/CheckoutModal";
+import CheckoutModal from "@/app/components/payment/CheckoutModal";
 
 const API  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
