@@ -1,26 +1,12 @@
 "use client";
 // components/DashboardShell.jsx
-// Shared layout for ALL THREE role dashboards (client, lawyer, admin).
-// ── Provides ──────────────────────────────────────────────────────────────────
-//   • Sidebar with role-specific nav links
-//   • Header with:
-//       - MessagesBadge (live unread count from Redux; click → /messages)
-//       - NotificationBell (with dropdown)
-//       - User avatar + name
-//   • Initialises the socket connection (via useSocket)
-//   • Loads contacts + notifications on mount so badges are always current
-//
-// Usage:
-//   <DashboardShell role="client" navItems={[...]} currentPath="/dashboard/client/messages">
-//     {children}
-//   </DashboardShell>
 
 import Link                               from "next/link";
 import { useDispatch, useSelector }       from "react-redux";
 import { useRouter }                      from "next/navigation";
 import { useEffect }                      from "react";
 import { logoutUser }                     from "@/store/slices/authSlice";
-import { resetChat, fetchConversations }  from "@/store/slices/chatSlice";
+import { resetChat, fetchContacts }       from "@/store/slices/chatSlice";
 import { fetchNotifications }             from "@/store/slices/notificationSlice";
 import { useSocket }                      from "@/hooks/useSocket";
 import NotificationBell                   from "./NotificationBell";
@@ -29,14 +15,14 @@ export default function DashboardShell({ role, navItems, currentPath, children }
   const dispatch       = useDispatch();
   const router         = useRouter();
   const user           = useSelector((s) => s.auth.user);
-  const unreadMessages = useSelector((s) => s.chat.unreadCount);
+  const unreadMessages = useSelector((s) =>
+    (s.chat.contacts || []).reduce((sum, c) => sum + (c.unread || 0), 0)
+  );
 
-  // ── Connect socket (real-time messages & notifications) ───────────────────
   useSocket();
 
-  // ── Prime badge counts on shell mount ─────────────────────────────────────
   useEffect(() => {
-    dispatch(fetchConversations());
+    dispatch(fetchContacts());
     dispatch(fetchNotifications({ page: 1, limit: 15 }));
   }, [dispatch]);
 
@@ -48,6 +34,22 @@ export default function DashboardShell({ role, navItems, currentPath, children }
 
   const initials = (name) =>
     name?.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2) || "?";
+
+  // ── Payment nav items injected per role ──────────────────────────────────
+  // These are appended to whatever navItems the parent passes in.
+  const paymentNavItems =
+    role === "client"
+      ? [{ href: `/dashboard/client/payments`,    icon: "💳", label: "Payments" }]
+      : role === "lawyer"
+      ? [
+          { href: `/dashboard/lawyer/earnings`,     icon: "💰", label: "Earnings" },
+          { href: `/dashboard/lawyer/stripe-setup`, icon: "🔗", label: "Stripe Setup" },
+        ]
+      : role === "admin"
+      ? [{ href: `/dashboard/admin/payments`,       icon: "💳", label: "Payments" }]
+      : [];
+
+  const allNavItems = [...navItems, ...paymentNavItems];
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
@@ -77,7 +79,7 @@ export default function DashboardShell({ role, navItems, currentPath, children }
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-3 overflow-y-auto">
-          {navItems.map((item) => {
+          {allNavItems.map((item) => {
             const isActive = currentPath === item.href || currentPath?.startsWith(item.href + "/");
             return (
               <Link
@@ -90,7 +92,6 @@ export default function DashboardShell({ role, navItems, currentPath, children }
               >
                 <span className="text-base w-5 text-center flex-shrink-0">{item.icon}</span>
                 <span className="flex-1">{item.label}</span>
-                {/* Messages unread badge in sidebar */}
                 {item.label === "Messages" && unreadMessages > 0 && (
                   <span className="bg-blue-500 text-white text-xs font-bold rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
                     {unreadMessages > 99 ? "99+" : unreadMessages}
@@ -127,17 +128,11 @@ export default function DashboardShell({ role, navItems, currentPath, children }
 
         {/* Header */}
         <header className="bg-white border-b border-gray-100 px-6 h-14 flex items-center justify-between flex-shrink-0">
-          {/* Breadcrumb / page title */}
           <div className="text-sm text-gray-500">
-            {navItems.find((n) => currentPath === n.href || currentPath?.startsWith(n.href + "/"))?.label || "Dashboard"}
+            {allNavItems.find((n) => currentPath === n.href || currentPath?.startsWith(n.href + "/"))?.label || "Dashboard"}
           </div>
 
-          {/* Right: Messages badge + Bell */}
           <div className="flex items-center gap-1">
-
-            {/* ── Messages Badge ────────────────────────────────────────────
-                Click → /dashboard/{role}/messages
-                Shows unread count; if > 0, badge is red              */}
             <Link
               href={`/dashboard/${role}/messages`}
               className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -155,15 +150,10 @@ export default function DashboardShell({ role, navItems, currentPath, children }
               )}
             </Link>
 
-            {/* ── Notification Bell ─────────────────────────────────────────
-                Clicking a "message" notification navigates to the
-                specific chat via the link set by the backend          */}
             <NotificationBell role={role} />
-
           </div>
         </header>
 
-        {/* Page content */}
         <div className="flex-1 overflow-y-auto">
           {children}
         </div>

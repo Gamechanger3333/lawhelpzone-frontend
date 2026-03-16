@@ -6,7 +6,9 @@ import { useAppSelector } from "../../../store/index";
 import {
   Scale, Users, Briefcase, MessageSquare, Bell, Video,
   CheckCircle, AlertTriangle, X, RefreshCw, ChevronRight, Search,
+  DollarSign,
 } from "lucide-react";
+import StripeSetupBanner from "@/components/payment/StripeSetupBanner";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -171,192 +173,45 @@ export default function LawyerDashboard() {
     { label: "Notifications", icon: Bell,          fn: () => router.push("/dashboard/lawyer/notifications"),         badge: notifBadge, color: "#f59e0b", bg: "#fffbeb" },
     { label: "My Cases",      icon: Scale,         fn: () => router.push("/dashboard/lawyer/cases"),                 badge: 0,          color: "#0A1A3F", bg: "#eef0f7" },
     { label: "My Clients",    icon: Users,         fn: () => router.push("/dashboard/lawyer/clients"),               badge: 0,          color: "#8b5cf6", bg: "#f5f3ff" },
-    { label: "Profile",       icon: Briefcase,     fn: () => router.push("/dashboard/lawyer/profile"),               badge: 0,          color: "#64748b", bg: "#f8fafc" },
+    { label: "Earnings",      icon: DollarSign,    fn: () => router.push("/dashboard/lawyer/earnings"),              badge: 0,          color: "#10b981", bg: "#f0fdf4" },
   ];
 
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-
     * { box-sizing: border-box; }
-
-    .ld-root {
-      font-family: 'DM Sans', sans-serif;
-      min-height: 100vh;
-      color: #0f172a;
-      padding: 28px 32px 60px;
-    }
-
+    .ld-root { font-family: 'DM Sans', sans-serif; min-height: 100vh; color: #0f172a; padding: 28px 32px 60px; }
     @keyframes fadeUp  { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
     @keyframes spin    { to   { transform:rotate(360deg) } }
     @keyframes popIn   { from { transform:scale(0.6); opacity:0 } to { transform:scale(1); opacity:1 } }
     @keyframes pulse2  { 0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,0.35) } 70% { box-shadow:0 0 0 8px transparent } }
-
-    /* ── Stat cards ── */
-    .stat-card {
-      background: #fff;
-      border: 1px solid #f1f5f9;
-      border-radius: 16px;
-      padding: 20px 22px 18px;
-      transition: transform 0.18s, box-shadow 0.18s;
-      cursor: default;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--accent);
-      opacity: 0.85;
-    }
-    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.08); }
-
-    /* ── Quick action buttons ── */
-    .qa-btn {
-      background: #fff;
-      border: 1px solid #f1f5f9;
-      border-radius: 14px;
-      padding: 16px 10px 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 9px;
-      cursor: pointer;
-      transition: all 0.18s;
-      position: relative;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .qa-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(0,0,0,0.09);
-      border-color: #e2e8f0;
-    }
-    .qa-badge {
-      position: absolute;
-      top: 7px; right: 7px;
-      min-width: 17px; height: 17px;
-      border-radius: 9px;
-      background: #ef4444;
-      color: #fff;
-      font-size: 9px;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 4px;
-      animation: popIn 0.25s cubic-bezier(0.34,1.56,0.64,1);
-      font-family: 'DM Mono', monospace;
-    }
-
-    /* ── Tab buttons ── */
-    .tab-btn {
-      padding: 7px 18px;
-      border-radius: 20px;
-      border: 1px solid transparent;
-      font-size: 12.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .tab-btn.active {
-      background: #0A1A3F;
-      color: #fff;
-      border-color: #0A1A3F;
-    }
-    .tab-btn:not(.active) {
-      background: #f1f5f9;
-      color: #64748b;
-    }
-    .tab-btn:not(.active):hover { background: #e2e8f0; color: #475569; }
-
-    /* ── Case rows ── */
-    .case-row {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 20px;
-      border-bottom: 1px solid #f8fafc;
-      transition: background 0.1s;
-    }
-    .case-row:last-child { border-bottom: none; }
-    .case-row:hover { background: #f8fafc; }
-
-    /* ── User cards ── */
-    .user-card {
-      background: #f8fafc;
-      border: 1px solid #f1f5f9;
-      border-radius: 14px;
-      padding: 15px;
-      transition: all 0.18s;
-    }
-    .user-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); border-color: #e2e8f0; }
-
-    /* ── Action buttons ── */
-    .act-btn {
-      flex: 1;
-      padding: 7px 0;
-      border-radius: 8px;
-      font-size: 11.5px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: opacity 0.15s, transform 0.12s;
-      font-family: 'DM Sans', sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      border: none;
-    }
-    .act-btn:hover { opacity: 0.82; transform: scale(0.97); }
-
-    /* ── Sidebar card ── */
-    .side-card {
-      background: #fff;
-      border: 1px solid #f1f5f9;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-    }
-
-    /* ── Notification rows ── */
-    .notif-row {
-      padding: 11px 18px;
-      border-bottom: 1px solid #f8fafc;
-      transition: background 0.1s;
-    }
-    .notif-row:last-child { border-bottom: none; }
-    .notif-row:hover { background: #f8fafc; }
-    .notif-row.unread { border-left: 3px solid #f59e0b; background: #fffbeb; }
-
-    /* ── Input ── */
-    .ld-input {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      color: #0f172a;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.15s, background 0.15s;
-    }
-    .ld-input:focus { border-color: #94a3b8; background: #fff; }
-    .ld-input::placeholder { color: #94a3b8; }
-
-    /* ── Online pulse ── */
-    .online-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #10b981;
-      animation: pulse2 2s infinite;
-      display: inline-block;
-    }
-
-    /* ── Scrollbar ── */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 3px; }
+    .stat-card { background:#fff; border:1px solid #f1f5f9; border-radius:16px; padding:20px 22px 18px; transition:transform 0.18s,box-shadow 0.18s; cursor:default; position:relative; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent); opacity:0.85; }
+    .stat-card:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,0.08); }
+    .qa-btn { background:#fff; border:1px solid #f1f5f9; border-radius:14px; padding:16px 10px 14px; display:flex; flex-direction:column; align-items:center; gap:9px; cursor:pointer; transition:all 0.18s; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
+    .qa-btn:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,0.09); border-color:#e2e8f0; }
+    .qa-badge { position:absolute; top:7px; right:7px; min-width:17px; height:17px; border-radius:9px; background:#ef4444; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); font-family:'DM Mono',monospace; }
+    .tab-btn { padding:7px 18px; border-radius:20px; border:1px solid transparent; font-size:12.5px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+    .tab-btn.active { background:#0A1A3F; color:#fff; border-color:#0A1A3F; }
+    .tab-btn:not(.active) { background:#f1f5f9; color:#64748b; }
+    .tab-btn:not(.active):hover { background:#e2e8f0; color:#475569; }
+    .case-row { display:flex; align-items:center; gap:14px; padding:14px 20px; border-bottom:1px solid #f8fafc; transition:background 0.1s; }
+    .case-row:last-child { border-bottom:none; }
+    .case-row:hover { background:#f8fafc; }
+    .user-card { background:#f8fafc; border:1px solid #f1f5f9; border-radius:14px; padding:15px; transition:all 0.18s; }
+    .user-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.07); border-color:#e2e8f0; }
+    .act-btn { flex:1; padding:7px 0; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; transition:opacity 0.15s,transform 0.12s; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:5px; border:none; }
+    .act-btn:hover { opacity:0.82; transform:scale(0.97); }
+    .side-card { background:#fff; border:1px solid #f1f5f9; border-radius:16px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
+    .notif-row { padding:11px 18px; border-bottom:1px solid #f8fafc; transition:background 0.1s; }
+    .notif-row:last-child { border-bottom:none; }
+    .notif-row:hover { background:#f8fafc; }
+    .notif-row.unread { border-left:3px solid #f59e0b; background:#fffbeb; }
+    .ld-input { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-family:'DM Sans',sans-serif; font-size:13px; outline:none; transition:border-color 0.15s,background 0.15s; }
+    .ld-input:focus { border-color:#94a3b8; background:#fff; }
+    .ld-input::placeholder { color:#94a3b8; }
+    .online-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse2 2s infinite; display:inline-block; }
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-thumb { background:#e2e8f0; border-radius:3px; }
   `;
 
   if (loading) return (
@@ -375,6 +230,9 @@ export default function LawyerDashboard() {
       <div className="ld-root" style={{ opacity: vis ? 1 : 0, transition: "opacity 0.4s" }}>
         {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
+        {/* ── Stripe Setup Banner — shows only if Stripe not connected ── */}
+        <StripeSetupBanner />
+
         {/* ── Proposal Modal ── */}
         {propCase && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)", padding: 20 }}
@@ -388,7 +246,6 @@ export default function LawyerDashboard() {
                 </div>
                 <button onClick={() => setPropCase(null)} style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 8, padding: "5px 7px", cursor: "pointer", color: "#64748b" }}><X size={14} /></button>
               </div>
-
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 700, color: "#64748b", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.08em" }}>Proposed Fee (PKR)</label>
@@ -401,7 +258,6 @@ export default function LawyerDashboard() {
                     className="ld-input" style={{ width: "100%", padding: "11px 14px", resize: "vertical" }} />
                 </div>
               </div>
-
               <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
                 <button onClick={() => setPropCase(null)}
                   style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontWeight: 600, cursor: "pointer", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
@@ -437,15 +293,18 @@ export default function LawyerDashboard() {
               </p>
             </div>
           </div>
-
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => load(true)}
               style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", transition: "all 0.15s" }}>
               <RefreshCw size={13} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
               Refresh
             </button>
+            <button onClick={() => router.push("/dashboard/lawyer/earnings")}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
+              <DollarSign size={13} /> Earnings
+            </button>
             <button onClick={() => router.push("/dashboard/lawyer/cases")}
-              style={{ padding: "9px 20px", borderRadius: 10, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
+              style={{ padding: "9px 20px", borderRadius: 10, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
               View Cases
             </button>
           </div>
@@ -501,7 +360,6 @@ export default function LawyerDashboard() {
 
             <div style={{ background: "#fff", border: "1px solid #f1f5f9", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.04)", animation: "fadeUp 0.4s ease 0.15s both" }}>
 
-              {/* My Cases */}
               {tab === "my" && (
                 myCases.length === 0
                   ? <div style={{ padding: "52px 24px", textAlign: "center" }}>
@@ -541,7 +399,6 @@ export default function LawyerDashboard() {
                     })
               )}
 
-              {/* Available Cases */}
               {tab === "available" && (
                 avail.length === 0
                   ? <div style={{ padding: "52px 24px", textAlign: "center" }}>
@@ -578,7 +435,6 @@ export default function LawyerDashboard() {
                     })
               )}
 
-              {/* Clients */}
               {tab === "clients" && (
                 myClients.length === 0
                   ? <div style={{ padding: "52px 24px", textAlign: "center" }}>
@@ -588,9 +444,7 @@ export default function LawyerDashboard() {
                   : myClients.map((cl, i) => (
                       <div key={cl._id || i} className="case-row">
                         <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#eff6ff", color: "#3b82f6", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", border: "1px solid #dbeafe" }}>
-                          {cl.profileImage
-                            ? <img src={cl.profileImage} style={{ width: 36, height: 36, objectFit: "cover" }} alt="" />
-                            : (cl.name || "C").charAt(0).toUpperCase()}
+                          {cl.profileImage ? <img src={cl.profileImage} style={{ width: 36, height: 36, objectFit: "cover" }} alt="" /> : (cl.name || "C").charAt(0).toUpperCase()}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: "#0f172a" }}>{cl.name || "Client"}</p>
@@ -635,10 +489,14 @@ export default function LawyerDashboard() {
                   </div>
                 )}
               </div>
-              <div style={{ padding: "12px 14px" }}>
+              <div style={{ padding: "12px 14px", display: "flex", gap: 8 }}>
                 <button onClick={() => router.push("/dashboard/lawyer/profile")}
-                  style={{ width: "100%", padding: "9px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
                   ✏️ Edit Profile
+                </button>
+                <button onClick={() => router.push("/dashboard/lawyer/earnings")}
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "none", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  <DollarSign size={12} /> Earnings
                 </button>
               </div>
             </div>
@@ -673,14 +531,16 @@ export default function LawyerDashboard() {
               <p style={{ margin: "0 0 12px", fontSize: 10.5, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>Navigation</p>
               {[
                 { label: "My Cases",      path: "/dashboard/lawyer/cases",        icon: Scale     },
-                { label: "My Clients",    path: "/dashboard/lawyer/client-list",       icon: Users     },
-                { label: "Notifications", path: "/dashboard/lawyer/notifications", icon: Bell      },
-                { label: "Edit Profile",  path: "/dashboard/lawyer/profile",       icon: Briefcase },
+                { label: "My Clients",    path: "/dashboard/lawyer/client-list",  icon: Users     },
+                { label: "Earnings",      path: "/dashboard/lawyer/earnings",     icon: DollarSign },
+                { label: "Stripe Setup",  path: "/dashboard/lawyer/stripe-setup", icon: Briefcase },
+                { label: "Notifications", path: "/dashboard/lawyer/notifications",icon: Bell      },
+                { label: "Edit Profile",  path: "/dashboard/lawyer/profile",      icon: Briefcase },
               ].map((l, i) => {
                 const Icon = l.icon;
                 return (
                   <button key={l.path} onClick={() => router.push(l.path)}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", background: "none", border: "none", cursor: "pointer", borderBottom: i < 3 ? "1px solid #f8fafc" : "none", fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.15s" }}>
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", background: "none", border: "none", cursor: "pointer", borderBottom: i < 5 ? "1px solid #f8fafc" : "none", fontFamily: "'DM Sans', sans-serif", transition: "opacity 0.15s" }}>
                     <span style={{ width: 28, height: 28, borderRadius: 8, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid #f1f5f9" }}>
                       <Icon size={13} style={{ color: "#64748b" }} />
                     </span>
@@ -723,9 +583,7 @@ export default function LawyerDashboard() {
                     <div key={u._id} className="user-card">
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                         <div style={{ width: 38, height: 38, borderRadius: "50%", background: `${rc}14`, color: rc, fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden", border: `1.5px solid ${rc}28` }}>
-                          {u.profileImage
-                            ? <img src={u.profileImage} style={{ width: 38, height: 38, objectFit: "cover" }} alt="" />
-                            : (u.name || "U").charAt(0).toUpperCase()}
+                          {u.profileImage ? <img src={u.profileImage} style={{ width: 38, height: 38, objectFit: "cover" }} alt="" /> : (u.name || "U").charAt(0).toUpperCase()}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name || "Unnamed"}</p>

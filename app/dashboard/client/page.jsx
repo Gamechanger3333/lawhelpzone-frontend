@@ -8,6 +8,7 @@ import {
   CheckCircle, AlertCircle, Scale, Star, ChevronRight, RefreshCw,
   X, FileText, UserCheck, Users, ArrowRight, Search,
 } from "lucide-react";
+import CheckoutModal from "@/components/payment/CheckoutModal";
 
 const API  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -17,6 +18,37 @@ const CATS = [
   "Criminal Law","Family Law","Business Law","Real Estate",
   "Personal Injury","Estate Planning","Employment Law","Tax Law",
 ];
+
+// ── Inline pay button — fits inside compact card layouts ─────────────────────
+function PayButtonInline({ lawyerId, lawyerName, amount, caseId }) {
+  const [open, setOpen] = useState(false);
+  if (!amount || Number(amount) <= 0) return null;
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          padding: "4px 10px", borderRadius: 7,
+          background: "#2563eb", color: "#fff",
+          border: "none", fontSize: 11, fontWeight: 700,
+          cursor: "pointer", display: "inline-flex",
+          alignItems: "center", gap: 4, whiteSpace: "nowrap",
+        }}
+      >
+        💳 Pay ${Number(amount).toFixed(0)}
+      </button>
+      <CheckoutModal
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        lawyerId={lawyerId}
+        lawyerName={lawyerName}
+        amount={Number(amount)}
+        caseId={caseId}
+        onSuccess={() => setOpen(false)}
+      />
+    </>
+  );
+}
 
 function Counter({ to, dur = 900 }) {
   const [v, setV] = useState(0);
@@ -126,15 +158,24 @@ function ProposalsModal({ c, onClose, onAccepted }) {
                   {p.fee > 0 && <span style={{ fontSize: 14, fontWeight: 700, color: "#10b981" }}>PKR {p.fee.toLocaleString()}</span>}
                 </div>
                 {p.message && <p style={{ margin: "0 0 12px", fontSize: 13, color: "#475569", lineHeight: 1.6 }}>{p.message}</p>}
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {c.status === "open" && (
                     <button onClick={() => accept(p.lawyerId?._id || p.lawyerId)} disabled={!!loading}
-                      style={{ flex: 1, padding: 10, borderRadius: 10, background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                      style={{ flex: 1, minWidth: 80, padding: 10, borderRadius: 10, background: "#10b981", color: "#fff", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
                       {loading === (p.lawyerId?._id || p.lawyerId) ? "Accepting…" : "Accept ✓"}
                     </button>
                   )}
                   <button onClick={() => router.push(`/dashboard/client/messages?contact=${p.lawyerId?._id || p.lawyerId}`)}
                     style={{ padding: "10px 14px", borderRadius: 10, background: "#eff6ff", color: "#3b82f6", border: "none", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>💬 Chat</button>
+                  {/* Pay button inside proposal if fee is set */}
+                  {p.fee > 0 && (
+                    <PayButtonInline
+                      lawyerId={p.lawyerId?._id || p.lawyerId}
+                      lawyerName={p.lawyerId?.name || "Lawyer"}
+                      amount={p.fee}
+                      caseId={c._id}
+                    />
+                  )}
                 </div>
                 {p.status === "accepted" && <p style={{ margin: "8px 0 0", fontSize: 12, color: "#16a34a", fontWeight: 700, textAlign: "center" }}>✓ Accepted</p>}
               </div>
@@ -158,19 +199,17 @@ export default function ClientDashboard() {
   const [toast,      setToast]    = useState(null);
   const [lwSearch,   setLS]       = useState("");
 
-  // ── Live badge counts (token-based polling, no Redux wait) ────────
   const [unreadMsgs,      setUnreadMsgs]      = useState(0);
   const [unreadNotifs,    setUnreadNotifs]    = useState(0);
   const [latestMsgSender, setLatestMsgSender] = useState(null);
 
-  const pollRef  = useRef(null);
+  const pollRef   = useRef(null);
   const badgePoll = useRef(null);
 
   const name  = profile?.full_name?.split(" ")[0] || user?.name?.split(" ")[0] || "there";
   const hr    = new Date().getHours();
   const greet = hr < 12 ? "morning" : hr < 17 ? "afternoon" : "evening";
 
-  // ── Fetch badge counts independently ─────────────────────────────
   const fetchBadges = useCallback(async () => {
     if (!tok()) return;
     try {
@@ -194,7 +233,6 @@ export default function ClientDashboard() {
     } catch {}
   }, []);
 
-  // ── Main dashboard load ───────────────────────────────────────────
   const loadAll = useCallback(async (silent = false) => {
     if (!tok()) return;
     if (!silent) setLoading(true); else setRef(true);
@@ -203,7 +241,6 @@ export default function ClientDashboard() {
       if (r.ok) {
         const d = await r.json();
         setData(d);
-        // Seed badge counts from dashboard response
         if (d.stats?.unreadNotifications != null) setUnreadNotifs(d.stats.unreadNotifications);
         if (d.stats?.unreadMessages      != null) setUnreadMsgs(d.stats.unreadMessages);
       }
@@ -214,17 +251,15 @@ export default function ClientDashboard() {
     }
   }, []);
 
-  // ── Mount: eager load — NO gate on Redux initialized ──────────────
   useEffect(() => {
     if (!tok()) { setLoading(false); setTimeout(() => setVis(true), 50); return; }
     loadAll();
     fetchBadges();
-    pollRef.current  = setInterval(() => loadAll(true),  30000);
-    badgePoll.current = setInterval(fetchBadges,          10000);
+    pollRef.current   = setInterval(() => loadAll(true), 30000);
+    badgePoll.current = setInterval(fetchBadges, 10000);
     return () => { clearInterval(pollRef.current); clearInterval(badgePoll.current); };
   }, []);
 
-  // ── Derived state ─────────────────────────────────────────────────
   const stats      = data?.stats || {};
   const cases      = data?.recentCases || [];
   const myLawyers  = data?.myLawyers || [];
@@ -259,12 +294,12 @@ export default function ClientDashboard() {
   };
 
   const QUICK = [
-    { label: "New Case",       icon: Plus,          color: "#0A1A3F", fn: () => setShowM(true),                                         badge: 0 },
-    { label: "Messages",       icon: MessageSquare, color: "#3b82f6", fn: goMessages,                                                   badge: msgBadge },
-    { label: "Video Call",     icon: Video,         color: "#10b981", fn: () => router.push("/dashboard/client/video-calls"),           badge: 0 },
-    { label: "Notifications",  icon: Bell,          color: "#f59e0b", fn: () => router.push("/dashboard/client/notifications"),         badge: notifBadge },
-    { label: "My Cases",       icon: Briefcase,     color: "#8b5cf6", fn: () => router.push("/dashboard/client/cases"),                 badge: stats.activeCases || 0 },
-    { label: "Browse Lawyers", icon: Users,         color: "#06b6d4", fn: () => router.push("/browse-lawyers"),                         badge: 0 },
+    { label: "New Case",       icon: Plus,          color: "#0A1A3F", fn: () => setShowM(true),                                        badge: 0 },
+    { label: "Messages",       icon: MessageSquare, color: "#3b82f6", fn: goMessages,                                                  badge: msgBadge },
+    { label: "Video Call",     icon: Video,         color: "#10b981", fn: () => router.push("/dashboard/client/video-calls"),          badge: 0 },
+    { label: "Notifications",  icon: Bell,          color: "#f59e0b", fn: () => router.push("/dashboard/client/notifications"),        badge: notifBadge },
+    { label: "My Cases",       icon: Briefcase,     color: "#8b5cf6", fn: () => router.push("/dashboard/client/cases"),                badge: stats.activeCases || 0 },
+    { label: "Browse Lawyers", icon: Users,         color: "#06b6d4", fn: () => router.push("/browse-lawyers"),                        badge: 0 },
   ];
 
   const css = `
@@ -320,7 +355,7 @@ export default function ClientDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions with live badges */}
+      {/* Quick Actions */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12, marginBottom: 28 }}>
         {QUICK.map((q, i) => (
           <button key={q.label} onClick={q.fn} className="qbtn" style={{ animation: `fd 0.5s ease ${0.3 + i * 0.06}s both`, position: "relative" }}>
@@ -369,17 +404,26 @@ export default function ClientDashboard() {
                         )}
                       </div>
                     </div>
+
+                    {/* ── Assigned lawyer card with PAY BUTTON ── */}
                     {c.assignedLawyerId && (
-                      <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdf4", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ marginTop: 10, padding: "8px 12px", background: "#f0fdf4", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           <div style={{ width: 26, height: 26, borderRadius: "50%", background: "#10b981", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
                             {(c.assignedLawyerId.name || "L").charAt(0)}
                           </div>
                           <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: "#14532d" }}>{c.assignedLawyerId.name || "Your Lawyer"}</p>
                         </div>
-                        <div style={{ display: "flex", gap: 5 }}>
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
                           <button onClick={() => router.push(`/dashboard/client/messages?contact=${c.assignedLawyerId._id || c.assignedLawyerId}`)} style={{ padding: "4px 10px", borderRadius: 7, background: "#10b981", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>💬 Msg</button>
                           <button onClick={() => router.push(`/dashboard/client/video-calls?contact=${c.assignedLawyerId._id || c.assignedLawyerId}`)} style={{ padding: "4px 10px", borderRadius: 7, background: "#fff", color: "#10b981", border: "1px solid #86efac", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📹 Call</button>
+                          {/* ← PAY BUTTON: only shown if lawyer has a fee set */}
+                          <PayButtonInline
+                            lawyerId={c.assignedLawyerId._id || c.assignedLawyerId}
+                            lawyerName={c.assignedLawyerId.name || "Lawyer"}
+                            amount={c.assignedLawyerId.lawyerProfile?.consultationFee}
+                            caseId={c._id}
+                          />
                         </div>
                       </div>
                     )}
@@ -423,7 +467,7 @@ export default function ClientDashboard() {
             <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>{stats.resolvedCases || 0} of {stats.totalCases || 0} cases resolved</p>
           </div>
 
-          {/* My Lawyers */}
+          {/* My Lawyers with PAY BUTTON */}
           {myLawyers.length > 0 && (
             <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #f1f5f9", padding: "16px 18px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", animation: "fd 0.5s ease 0.8s both" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
@@ -434,7 +478,7 @@ export default function ClientDashboard() {
                 <button onClick={() => router.push("/dashboard/client/my-lawyer")} style={{ fontSize: 12, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>All →</button>
               </div>
               {myLawyers.slice(0, 3).map(l => (
-                <div key={l._id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid #f8fafc" }}>
+                <div key={l._id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid #f8fafc", flexWrap: "wrap" }}>
                   <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#10b981", color: "#fff", fontWeight: 800, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
                     {l.profileImage ? <img src={l.profileImage} style={{ width: 32, height: 32, objectFit: "cover" }} alt="" /> : (l.name || "L").charAt(0)}
                   </div>
@@ -442,9 +486,15 @@ export default function ClientDashboard() {
                     <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.name}</p>
                     <p style={{ margin: 0, fontSize: 10, color: "#64748b" }}>{l.lawyerProfile?.specializations?.[0] || "Lawyer"}</p>
                   </div>
-                  <div style={{ display: "flex", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                     <button onClick={() => router.push(`/dashboard/client/messages?contact=${l._id}`)} style={{ width: 26, height: 26, borderRadius: 6, background: "#eff6ff", border: "none", cursor: "pointer", fontSize: 12 }}>💬</button>
                     <button onClick={() => router.push(`/dashboard/client/video-calls?contact=${l._id}`)} style={{ width: 26, height: 26, borderRadius: 6, background: "#f0fdf4", border: "none", cursor: "pointer", fontSize: 12 }}>📹</button>
+                    {/* ← PAY BUTTON in "My Lawyers" sidebar */}
+                    <PayButtonInline
+                      lawyerId={l._id}
+                      lawyerName={l.name}
+                      amount={l.lawyerProfile?.consultationFee}
+                    />
                   </div>
                 </div>
               ))}
@@ -453,7 +503,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
-      {/* All Registered Lawyers */}
+      {/* All Registered Lawyers with PAY BUTTON */}
       <div style={{ background: "#fff", borderRadius: 20, border: "1px solid #f1f5f9", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)", animation: "fd 0.5s ease 0.9s both" }}>
         <div style={{ padding: "18px 22px", borderBottom: "1px solid #f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -485,10 +535,24 @@ export default function ClientDashboard() {
                   <div style={{ display: "flex", alignItems: "center", gap: 2, marginBottom: 10 }}>
                     {[1,2,3,4,5].map(s => <Star key={s} size={11} style={{ color: s <= (l.lawyerProfile?.rating || 5) ? "#f59e0b" : "#e2e8f0", fill: s <= (l.lawyerProfile?.rating || 5) ? "#f59e0b" : "transparent" }} />)}
                     <span style={{ fontSize: 10, color: "#64748b", marginLeft: 3 }}>{l.lawyerProfile?.rating || "5.0"}</span>
+                    {l.lawyerProfile?.consultationFee > 0 && (
+                      <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: "#10b981" }}>
+                        ${l.lawyerProfile.consultationFee}/consult
+                      </span>
+                    )}
                   </div>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={() => router.push(`/dashboard/client/messages?contact=${l._id}`)} style={{ flex: 1, padding: "7px 0", borderRadius: 8, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>💬 Msg</button>
-                    <button onClick={() => router.push(`/dashboard/client/video-calls?contact=${l._id}`)} style={{ flex: 1, padding: "7px 0", borderRadius: 8, background: "#f0fdf4", color: "#10b981", border: "1px solid #bbf7d0", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📹 Call</button>
+                  {/* ── 3 action buttons: Msg, Call, Pay ── */}
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                    <button onClick={() => router.push(`/dashboard/client/messages?contact=${l._id}`)} style={{ flex: 1, minWidth: 50, padding: "7px 0", borderRadius: 8, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>💬 Msg</button>
+                    <button onClick={() => router.push(`/dashboard/client/video-calls?contact=${l._id}`)} style={{ flex: 1, minWidth: 50, padding: "7px 0", borderRadius: 8, background: "#f0fdf4", color: "#10b981", border: "1px solid #bbf7d0", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📹 Call</button>
+                    {/* ← PAY BUTTON on each lawyer card */}
+                    {l.lawyerProfile?.consultationFee > 0 && (
+                      <PayButtonInline
+                        lawyerId={l._id}
+                        lawyerName={l.name}
+                        amount={l.lawyerProfile.consultationFee}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

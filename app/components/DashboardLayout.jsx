@@ -8,6 +8,7 @@ import {
   LayoutDashboard, MessageSquare, Bell, Video, User,
   FileText, Briefcase, Users, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Phone, Moon, Sun,
+  CreditCard, DollarSign, ExternalLink,
 } from "lucide-react";
 
 function cn(...c) { return c.filter(Boolean).join(" "); }
@@ -26,14 +27,17 @@ const roleConfig = {
     tools: [
       { label: "My Cases",  href: "cases",     icon: FileText },
       { label: "My Lawyer", href: "my-lawyer", icon: Briefcase },
+      { label: "Payments",  href: "payments",  icon: CreditCard },   // ← NEW
     ],
     toolsLabel: "Client Tools",
   },
   lawyer: {
     label: "Lawyer", dot: "#10b981",
     tools: [
-      { label: "My Cases",    href: "cases",       icon: FileText },
-      { label: "Client List", href: "client-list", icon: Users },
+      { label: "My Cases",    href: "cases",        icon: FileText },
+      { label: "Client List", href: "client-list",  icon: Users },
+      { label: "Earnings",    href: "earnings",     icon: DollarSign },    // ← NEW
+      { label: "Stripe Setup", href: "stripe-setup", icon: ExternalLink }, // ← NEW
     ],
     toolsLabel: "Lawyer Tools",
   },
@@ -42,6 +46,7 @@ const roleConfig = {
     tools: [
       { label: "User Management", href: "user-management", icon: Users },
       { label: "System Settings", href: "system-settings", icon: Settings },
+      { label: "Payments",        href: "payments",        icon: CreditCard }, // ← NEW
     ],
     toolsLabel: "Admin Tools",
   },
@@ -69,12 +74,9 @@ export default function DashboardLayout({ children, role }) {
   const [notifCount, setNotif] = useState(0);
   const [callAlert,  setCall]  = useState(null);
 
-  // Track latest unread sender so clicking the header badge
-  // opens that specific conversation, not just the message list.
   const latestSenderRef = useRef(null);
   const pollRef         = useRef(null);
 
-  // Dark mode init
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
@@ -84,7 +86,6 @@ export default function DashboardLayout({ children, role }) {
     setDark(d => !d);
   };
 
-  // API polling: fetch unread counts + latest sender every 15 s
   const fetchCounts = useCallback(async () => {
     if (!user || !tok()) return;
     try {
@@ -105,7 +106,6 @@ export default function DashboardLayout({ children, role }) {
         const md = await mr.json();
         const contacts = md.contacts || [];
         setMsg(contacts.reduce((s, c) => s + (c.unread || 0), 0));
-        // Track latest unread sender for smart navigation
         const withUnread = contacts
           .filter(c => (c.unread || 0) > 0)
           .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
@@ -121,7 +121,6 @@ export default function DashboardLayout({ children, role }) {
     return () => clearInterval(pollRef.current);
   }, [user, fetchCounts]);
 
-  // Socket: real-time increments on top of polling baseline
   useEffect(() => {
     if (!socket) return;
     if (socket.unreadMessages != null) setMsg(socket.unreadMessages);
@@ -134,7 +133,7 @@ export default function DashboardLayout({ children, role }) {
       if (type === "message") {
         setMsg(n => n + 1);
         if (data?.senderId) latestSenderRef.current = data.senderId;
-        fetchCounts(); // re-sync sender list
+        fetchCounts();
       }
       if (type === "notification") setNotif(n => n + 1);
       if (type === "call")         setCall(data);
@@ -157,7 +156,6 @@ export default function DashboardLayout({ children, role }) {
     setTimeout(fetchCounts, 2000);
   };
 
-  // Header message button: opens latest unread sender's chat
   const goMessages = () => {
     setMsg(0);
     socket?.clearUnreadMessages?.();
@@ -169,7 +167,6 @@ export default function DashboardLayout({ children, role }) {
     setTimeout(fetchCounts, 2000);
   };
 
-  // Header bell button
   const goNotifications = () => {
     setNotif(0);
     socket?.clearUnreadNotifs?.();
@@ -268,7 +265,6 @@ export default function DashboardLayout({ children, role }) {
 
       <aside className={cn("fixed inset-y-0 left-0 z-50 w-64 flex flex-col lg:hidden transition-transform duration-300", mob ? "translate-x-0" : "-translate-x-full")}
         style={{ backgroundColor: NAVY }}>
-        {/* Mobile drawer header — shrink-0 so it never squashes */}
         <div style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }} className="h-14 shrink-0 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: ACT }}>
@@ -278,7 +274,6 @@ export default function DashboardLayout({ children, role }) {
           </div>
           <button onClick={() => setMob(false)} className="text-gray-400 hover:text-white p-1"><X className="w-5 h-5" /></button>
         </div>
-        {/* flex-1 min-h-0 — gives SidebarInner exactly the remaining height */}
         <div className="flex-1 min-h-0">
           <SidebarInner forMobile />
         </div>
@@ -293,7 +288,6 @@ export default function DashboardLayout({ children, role }) {
             {open ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         </div>
-        {/* flex-1 min-h-0 ensures SidebarInner fills remaining space without overflowing */}
         <div className="flex-1 min-h-0">
           <SidebarInner />
         </div>
@@ -314,7 +308,7 @@ export default function DashboardLayout({ children, role }) {
 
           <div className="flex items-center gap-1">
 
-            {/* Messages — opens the latest unread sender's chat */}
+            {/* Messages */}
             <button
               onClick={goMessages}
               title={msgCount > 0 ? `${msgCount} unread message${msgCount !== 1 ? "s" : ""}` : "Messages"}
@@ -344,6 +338,28 @@ export default function DashboardLayout({ children, role }) {
               )}
             </button>
 
+            {/* ── Payments quick-link in header (client only) ── */}
+            {role === "client" && (
+              <button
+                onClick={() => router.push(`${base}/payments`)}
+                title="My Payments"
+                className="relative p-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <CreditCard className="w-5 h-5 text-gray-300" />
+              </button>
+            )}
+
+            {/* ── Earnings quick-link in header (lawyer only) ── */}
+            {role === "lawyer" && (
+              <button
+                onClick={() => router.push(`${base}/earnings`)}
+                title="My Earnings"
+                className="relative p-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <DollarSign className="w-5 h-5 text-gray-300" />
+              </button>
+            )}
+
             <span className="text-xs hidden sm:inline ml-2" style={{ color: "#93c5fd" }}>{email}</span>
           </div>
         </header>
@@ -371,7 +387,7 @@ export default function DashboardLayout({ children, role }) {
           {children}
         </main>
 
-        {/* ── Mobile bottom tab bar — always visible, always accessible ── */}
+        {/* ── Mobile bottom tab bar ── */}
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 flex items-stretch"
           style={{ backgroundColor: NAVY, borderTop: "1px solid rgba(255,255,255,0.12)", height: 60 }}>
           {[

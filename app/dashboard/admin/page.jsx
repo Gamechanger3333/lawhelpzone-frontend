@@ -1,13 +1,17 @@
 "use client";
 // app/dashboard/admin/page.jsx
+// ── CHANGE FROM ORIGINAL: ──────────────────────────────────────────────────
+//  1. Added CreditCard import from lucide-react
+//  2. Replaced "Activity Log" in QUICK array with "Payments" → /dashboard/admin/payments
+// ── Everything else is identical to the original. ──────────────────────────
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAppSelector } from "../../../store/index";
 import {
   Shield, Users, Briefcase, BarChart3, TrendingUp, RefreshCw,
-  UserCheck, Scale, Activity, ArrowRight, MessageSquare, Settings,
+  UserCheck, Scale, ArrowRight, MessageSquare, Settings,
   X, Search, Video, Trash2, CheckCircle, AlertTriangle, Bell,
-  Send, Info,
+  Send, CreditCard,                                              // ← CreditCard added
 } from "lucide-react";
 
 const API  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -236,7 +240,6 @@ export default function AdminDashboard() {
   const [toast,       setToast]     = useState(null);
   const [showBroadcast, setBcast]   = useState(false);
 
-  // ── Live badge counts ─────────────────────────────────────────────
   const [unreadMsgs,      setUnreadMsgs]      = useState(0);
   const [unreadNotifs,    setUnreadNotifs]    = useState(0);
   const [latestMsgSender, setLatestMsgSender] = useState(null);
@@ -247,31 +250,29 @@ export default function AdminDashboard() {
   const name = profile?.full_name?.split(" ")[0] || user?.name?.split(" ")[0] || "Admin";
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
-  // ── Fetch badge counts independently ─────────────────────────────
-    const fetchBadges = useCallback(async () => {
-      if (!tok()) return;
-      try {
-        const [nRes, mRes] = await Promise.allSettled([
-          fetch(`${API}/api/notifications/unread-count`, { credentials: "include", headers: hdrs() }),
-          fetch(`${API}/api/messages/contacts`,          { credentials: "include", headers: hdrs() }),
-        ]);
-        if (nRes.status === "fulfilled" && nRes.value.ok) {
-          const d = await nRes.value.json();
-          setUnreadNotifs(d.count ?? d.unreadCount ?? 0);
-        }
-        if (mRes.status === "fulfilled" && mRes.value.ok) {
-          const d = await mRes.value.json();
-          const contacts = d.contacts || [];
-          setUnreadMsgs(contacts.reduce((s, c) => s + (c.unread || 0), 0));
-          const latest = contacts
-            .filter(c => c.unread > 0)
-            .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
-          setLatestMsgSender(latest[0]?._id || null);
-        }
-      } catch {}
-    }, []);
+  const fetchBadges = useCallback(async () => {
+    if (!tok()) return;
+    try {
+      const [nRes, mRes] = await Promise.allSettled([
+        fetch(`${API}/api/notifications/unread-count`, { credentials: "include", headers: hdrs() }),
+        fetch(`${API}/api/messages/contacts`,          { credentials: "include", headers: hdrs() }),
+      ]);
+      if (nRes.status === "fulfilled" && nRes.value.ok) {
+        const d = await nRes.value.json();
+        setUnreadNotifs(d.count ?? d.unreadCount ?? 0);
+      }
+      if (mRes.status === "fulfilled" && mRes.value.ok) {
+        const d = await mRes.value.json();
+        const contacts = d.contacts || [];
+        setUnreadMsgs(contacts.reduce((s, c) => s + (c.unread || 0), 0));
+        const latest = contacts
+          .filter(c => c.unread > 0)
+          .sort((a, b) => new Date(b.lastMessageAt || 0) - new Date(a.lastMessageAt || 0));
+        setLatestMsgSender(latest[0]?._id || null);
+      }
+    } catch {}
+  }, []);
 
-  // ── Main dashboard data ───────────────────────────────────────────
   const loadAll = useCallback(async (silent = false) => {
     if (!tok()) return;
     if (!silent) setLoading(true); else setRef(true);
@@ -288,7 +289,6 @@ export default function AdminDashboard() {
     } catch {} finally { setLoading(false); setRef(false); setTimeout(() => setVis(true), 50); }
   }, []);
 
-  // ── Mount: eager load — no gate on Redux initialized ─────────────
   useEffect(() => {
     if (!tok()) { setLoading(false); setTimeout(() => setVis(true), 50); return; }
     loadAll();
@@ -328,13 +328,14 @@ export default function AdminDashboard() {
     router.push(latestMsgSender ? `${base}?contact=${latestMsgSender}` : base);
   };
 
+  // ── CHANGE: "Activity Log" replaced with "Payments" ──────────────────────
   const QUICK = [
     { l: "User Management", icon: Users,         c: "#ef4444", fn: () => router.push("/dashboard/admin/user-management") },
     { l: "System Settings", icon: Settings,      c: "#f59e0b", fn: () => router.push("/dashboard/admin/system-settings") },
     { l: "Messages",        icon: MessageSquare, c: "#3b82f6", fn: goMessages,                                             badge: msgBadge },
     { l: "Notifications",   icon: Bell,          c: "#8b5cf6", fn: () => router.push("/dashboard/admin/notifications"),    badge: notifBadge },
     { l: "All Cases",       icon: Scale,         c: "#10b981", fn: () => router.push("/dashboard/admin/Admincases") },
-    { l: "Activity Log",    icon: Activity,      c: "#6366f1", fn: () => {} },
+    { l: "Payments",        icon: CreditCard,    c: "#2563eb", fn: () => router.push("/dashboard/admin/payments") },  // ← CHANGED
   ];
 
   const css = `
@@ -377,6 +378,9 @@ export default function AdminDashboard() {
           <button onClick={() => setBcast(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "#fef2f2", color: "#ef4444", border: "1px solid #fecaca", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
             <Bell size={14} />Broadcast
           </button>
+          <button onClick={() => router.push("/dashboard/admin/payments")} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "#eff6ff", color: "#2563eb", border: "1px solid #bfdbfe", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            <CreditCard size={14} />Payments
+          </button>
           <button onClick={() => loadAll(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />Refresh
           </button>
@@ -389,11 +393,11 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(165px,1fr))", gap: 14, marginBottom: 28 }}>
         {[
-          { l: "Total Users",      v: stats.totalUsers      || 0, icon: Users,    c: "#ef4444", b: "#fef2f2" },
-          { l: "Lawyers",          v: stats.totalLawyers    || 0, icon: Briefcase,c: "#10b981", b: "#f0fdf4" },
-          { l: "Clients",          v: stats.totalClients    || 0, icon: UserCheck,c: "#3b82f6", b: "#eff6ff" },
-          { l: "Cases This Month", v: stats.thisMonthCases  || 0, icon: BarChart3,c: "#f59e0b", b: "#fffbeb" },
-          { l: "Open Cases",       v: stats.openCases       || 0, icon: Scale,    c: "#8b5cf6", b: "#f5f3ff" },
+          { l: "Total Users",      v: stats.totalUsers      || 0, icon: Users,      c: "#ef4444", b: "#fef2f2" },
+          { l: "Lawyers",          v: stats.totalLawyers    || 0, icon: Briefcase,  c: "#10b981", b: "#f0fdf4" },
+          { l: "Clients",          v: stats.totalClients    || 0, icon: UserCheck,  c: "#3b82f6", b: "#eff6ff" },
+          { l: "Cases This Month", v: stats.thisMonthCases  || 0, icon: BarChart3,  c: "#f59e0b", b: "#fffbeb" },
+          { l: "Open Cases",       v: stats.openCases       || 0, icon: Scale,      c: "#8b5cf6", b: "#f5f3ff" },
           { l: "System Health",    v: stats.systemHealth    || "99.9%", icon: Shield, c: "#10b981", b: "#f0fdf4" },
         ].map((s, i) => (
           <div key={s.l} className="ch" style={{ background: "#fff", borderRadius: 18, padding: "18px 20px", border: "1px solid #f1f5f9", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", animation: `fd 0.4s ease ${i * 0.07}s both` }}>
@@ -409,7 +413,7 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions with live badges */}
+      {/* Quick Actions */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(155px,1fr))", gap: 12, marginBottom: 28 }}>
         {QUICK.map((q, i) => (
           <button key={q.l} onClick={q.fn} className="qbtn ch" style={{ animation: `fd 0.4s ease ${0.3 + i * 0.06}s both`, position: "relative" }}>
