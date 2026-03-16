@@ -15,7 +15,7 @@ import {
   fetchStripeDashboardLink,
   selectStripeStatus,
   selectPaymentLoading,
-} from "@/store/slices/paymentSlice";
+} from "@/store/slices/paymentSlice"
 import { AlertTriangle, ExternalLink, CheckCircle, Loader2, CreditCard } from "lucide-react";
 
 export default function StripeSetupBanner() {
