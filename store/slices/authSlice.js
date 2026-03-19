@@ -115,8 +115,7 @@ const authSlice = createSlice({
   initialState: {
     // `user`    — raw MongoDB user object (has _id, name, email, role, …)
     user:        null,
-    // `profile` — Supabase-compatible shape (full_name, avatar_url, role)
-    //             keeps all existing dashboard components working unchanged
+   
     profile:     null,
     loading:     false,
     error:       null,

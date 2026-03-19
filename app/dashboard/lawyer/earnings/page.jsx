@@ -9,7 +9,7 @@ import {
   selectEarnings,
   selectStripeStatus,
   selectPaymentLoading,
-} from "@/store/slices/paymentSlice";
+} from "../../../../store/slices/paymentSlice"
 import StripeSetupBanner from "@/app/components/payment/StripeSetupBanner";
 import PaymentHistory from "@/app/components/payment/PaymentHistory";
 import { DollarSign, TrendingUp, Clock, ExternalLink, Loader2 } from "lucide-react";

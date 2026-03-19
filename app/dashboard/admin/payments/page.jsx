@@ -7,7 +7,7 @@ import {
   fetchAdminRevenue,
   selectRevenue,
   selectPaymentLoading,
-} from "@/store/slices/paymentSlice";
+} from "../../../../store/slices/paymentSlice"
 import PaymentHistory from "@/app/components/payment/PaymentHistory";
 import { DollarSign, TrendingUp, Users, CreditCard } from "lucide-react";
 

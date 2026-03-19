@@ -24,7 +24,7 @@ import {
   selectCurrentPayment,
   selectPaymentLoading,
   selectPaymentError,
-} from "@/store/slices/paymentSlice";
+} from "@/store/slices/paymentSlice"
 import { X, Shield, CreditCard, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 // ── Lazy-load Stripe so it never crashes SSR ──────────────────────────────────
