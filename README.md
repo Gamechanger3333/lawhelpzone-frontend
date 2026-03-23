@@ -379,6 +379,6 @@ All 48 routes are statically generated at build time:
 
 <div align="center">
 
-Made with ❤️ by the LawHelpZone Team
+Made with ❤️ by the Razia
 
 </div>
