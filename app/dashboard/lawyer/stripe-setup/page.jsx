@@ -1,10 +1,6 @@
 "use client";
 // app/dashboard/lawyer/stripe-setup/page.jsx
-//
-// Stripe redirects lawyer back here after onboarding.
-// Query params from Stripe: none (just a return URL).
-// We re-check account status and show result.
-import { Suspense } from "react";   // add Suspense here
+import { Suspense } from "react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -29,18 +25,23 @@ function StripeSetupContent() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    // Re-fetch Stripe status every time this page loads
     dispatch(fetchStripeStatus()).then(() => setChecked(true));
   }, [dispatch]);
 
+  // ✅ Fixed: backend returns { onboardingUrl } not { url }
   const handleRetry = async () => {
     const result = await dispatch(connectStripeAccount());
-    if (result.payload?.url) window.location.href = result.payload.url;
+    if (result.payload?.onboardingUrl) {
+      window.location.href = result.payload.onboardingUrl;
+    }
   };
 
+  // ✅ Fixed: backend returns { loginUrl } not { url }
   const handleDashboard = async () => {
     const result = await dispatch(fetchStripeDashboardLink());
-    if (result.payload?.url) window.open(result.payload.url, "_blank");
+    if (result.payload?.loginUrl) {
+      window.open(result.payload.loginUrl, "_blank");
+    }
   };
 
   const handleRefresh = () => {
