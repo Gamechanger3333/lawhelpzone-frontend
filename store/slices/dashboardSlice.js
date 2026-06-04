@@ -1,7 +1,3 @@
-// store/slices/dashboardSlice.js
-// Calls GET /api/dashboard  (role-aware — backend returns different data per role)
-// Returns: { stats, recentCases, myCases, myClients, allUsers, recentNotifications, ... }
-
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -31,26 +27,27 @@ const dashboardSlice = createSlice({
     recentCases:         [],
     myCases:             [],
     myClients:           [],
-    allUsers:            [],
-    allLawyers:          [],
+    recentUsers:         [],
     recentNotifications: [],
+    lawyerProfile:       {},
     loading:             false,
     error:               null,
   },
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchDashboard.pending,   (s) => { s.loading = true; s.error = null; })
-      .addCase(fetchDashboard.rejected,  (s, a) => { s.loading = false; s.error = a.payload; })
-      .addCase(fetchDashboard.fulfilled, (s, a) => {
-        s.loading             = false;
-        s.stats               = a.payload.stats               || {};
-        s.recentCases         = a.payload.recentCases         || a.payload.myCases || [];
-        s.myCases             = a.payload.myCases             || [];
-        s.myClients           = a.payload.myClients           || [];
-        s.allUsers            = a.payload.allUsers            || [];
-        s.allLawyers          = a.payload.allLawyers          || [];
-        s.recentNotifications = a.payload.recentNotifications || [];
+      .addCase(fetchDashboard.pending,   (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchDashboard.rejected,  (state, action) => { state.loading = false; state.error = action.payload; })
+      .addCase(fetchDashboard.fulfilled, (state, action) => {
+        const p             = action.payload;
+        state.loading             = false;
+        state.stats               = p.stats               || {};
+        state.recentCases         = p.recentCases         || p.myCases || [];
+        state.myCases             = p.myCases             || [];
+        state.myClients           = p.myClients           || [];
+        state.recentUsers         = p.recentUsers         || [];
+        state.lawyerProfile       = p.lawyerProfile       || {};
+        state.recentNotifications = p.recentNotifications || [];
       });
   },
 });

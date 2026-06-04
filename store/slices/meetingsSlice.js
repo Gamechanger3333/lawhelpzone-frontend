@@ -1,14 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
-const authHeaders = () => {
+const H   = () => {
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  return { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) };
 };
+
+// ── Thunks ────────────────────────────────────────────────────────────────────
 
 export const fetchMeetings = createAsyncThunk(
   "meetings/fetchMeetings",
@@ -16,10 +14,7 @@ export const fetchMeetings = createAsyncThunk(
     try {
       const params = new URLSearchParams();
       if (upcoming) params.set("upcoming", "true");
-      const res = await fetch(`${API}/api/meetings?${params}`, {
-        credentials: "include",
-        headers: authHeaders(),
-      });
+      const res  = await fetch(`${API}/api/meetings?${params}`, { credentials: "include", headers: H() });
       const data = await res.json();
       if (!res.ok) return rejectWithValue(data.message);
       return data;
@@ -33,10 +28,8 @@ export const createMeeting = createAsyncThunk(
   "meetings/createMeeting",
   async (meetingData, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API}/api/meetings`, {
-        method: "POST",
-        credentials: "include",
-        headers: authHeaders(),
+      const res  = await fetch(`${API}/api/meetings`, {
+        method: "POST", credentials: "include", headers: H(),
         body: JSON.stringify(meetingData),
       });
       const data = await res.json();
@@ -52,10 +45,8 @@ export const updateMeeting = createAsyncThunk(
   "meetings/updateMeeting",
   async ({ id, updates }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`${API}/api/meetings/${id}`, {
-        method: "PUT",
-        credentials: "include",
-        headers: authHeaders(),
+      const res  = await fetch(`${API}/api/meetings/${id}`, {
+        method: "PUT", credentials: "include", headers: H(),
         body: JSON.stringify(updates),
       });
       const data = await res.json();
@@ -72,9 +63,7 @@ export const deleteMeeting = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const res = await fetch(`${API}/api/meetings/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: authHeaders(),
+        method: "DELETE", credentials: "include", headers: H(),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -87,43 +76,36 @@ export const deleteMeeting = createAsyncThunk(
   }
 );
 
+// ── Slice ─────────────────────────────────────────────────────────────────────
+
 const meetingsSlice = createSlice({
   name: "meetings",
   initialState: {
-    meetings: [],
+    meetings:      [],
     activeMeeting: null,
-    loading: false,
-    error: null,
+    loading:       false,
+    error:         null,
   },
   reducers: {
-    setActiveMeeting: (state, action) => { state.activeMeeting = action.payload; },
-    clearActiveMeeting: (state) => { state.activeMeeting = null; },
-    clearError: (state) => { state.error = null; },
+    setActiveMeeting:   (state, action) => { state.activeMeeting = action.payload; },
+    clearActiveMeeting: (state)         => { state.activeMeeting = null; },
+    clearError:         (state)         => { state.error = null; },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMeetings.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(fetchMeetings.fulfilled, (state, action) => {
-        state.loading = false;
-        state.meetings = action.payload;
-      })
-      .addCase(fetchMeetings.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-      .addCase(createMeeting.pending, (state) => { state.loading = true; state.error = null; })
-      .addCase(createMeeting.fulfilled, (state, action) => {
-        state.loading = false;
-        state.meetings.unshift(action.payload);
-      })
-      .addCase(createMeeting.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
+      .addCase(fetchMeetings.pending,   (state) => { state.loading = true; state.error = null; })
+      .addCase(fetchMeetings.fulfilled, (state, action) => { state.loading = false; state.meetings = action.payload; })
+      .addCase(fetchMeetings.rejected,  (state, action) => { state.loading = false; state.error = action.payload; })
+
+      .addCase(createMeeting.pending,   (state) => { state.loading = true; state.error = null; })
+      .addCase(createMeeting.fulfilled, (state, action) => { state.loading = false; state.meetings.unshift(action.payload); })
+      .addCase(createMeeting.rejected,  (state, action) => { state.loading = false; state.error = action.payload; })
+
       .addCase(updateMeeting.fulfilled, (state, action) => {
         const idx = state.meetings.findIndex((m) => m._id === action.payload._id);
         if (idx !== -1) state.meetings[idx] = action.payload;
       })
+
       .addCase(deleteMeeting.fulfilled, (state, action) => {
         state.meetings = state.meetings.filter((m) => m._id !== action.payload);
       });
