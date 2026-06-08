@@ -18,10 +18,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  createPaymentIntent,
-  clearPaymentIntent,
-  selectClientSecret,
-  selectCurrentPayment,
+  createCheckoutSession,
+  clearPaymentError,
   selectPaymentLoading,
   selectPaymentError,
 } from "@/store/slices/paymentSlice"
@@ -180,33 +178,45 @@ export default function CheckoutModal({
   onClose,
   lawyerId,
   lawyerName = "the lawyer",
-  amount,       // dollars (e.g. 150)
+  amount,
   caseId,
   onSuccess,
 }) {
   const dispatch       = useDispatch();
-  const clientSecret   = useSelector(selectClientSecret);
-  const currentPayment = useSelector(selectCurrentPayment);
   const loading        = useSelector(selectPaymentLoading);
   const error          = useSelector(selectPaymentError);
+  const [clientSecret, setClientSecret]   = useState(null);
+  const [currentPayment, setCurrentPayment] = useState(null);
 
-  // Create intent when modal opens
+  // Create payment intent when modal opens
   useEffect(() => {
     if (isOpen && lawyerId && amount && !clientSecret) {
-      dispatch(createPaymentIntent({ lawyerId, amount, caseId }));
+      dispatch(createCheckoutSession({ lawyerId, amount, caseId }))
+        .unwrap()
+        .then((data) => {
+          if (data?.clientSecret) {
+            setClientSecret(data.clientSecret);
+            setCurrentPayment(data);
+          }
+        })
+        .catch(() => {});
     }
   }, [isOpen, lawyerId, amount, caseId, clientSecret, dispatch]);
 
   // Clean up on close
   const handleClose = useCallback(() => {
-    dispatch(clearPaymentIntent());
+    setClientSecret(null);
+    setCurrentPayment(null);
+    dispatch(clearPaymentError());
     onClose?.();
   }, [dispatch, onClose]);
 
   const handleSuccess = useCallback((payment) => {
     onSuccess?.(payment);
     setTimeout(() => {
-      dispatch(clearPaymentIntent());
+      setClientSecret(null);
+      setCurrentPayment(null);
+      dispatch(clearPaymentError());
       onClose?.();
     }, 2500);
   }, [onSuccess, dispatch, onClose]);
@@ -271,7 +281,7 @@ export default function CheckoutModal({
                 <p className="text-sm text-red-700 font-medium">Payment setup failed</p>
                 <p className="text-xs text-red-500 mt-0.5">{error}</p>
                 <button
-                  onClick={() => dispatch(createPaymentIntent({ lawyerId, amount, caseId }))}
+                  onClick={() => dispatch(createCheckoutSession({ lawyerId, amount, caseId }))}
                   className="mt-2 text-xs text-blue-600 hover:underline"
                 >
                   Try again

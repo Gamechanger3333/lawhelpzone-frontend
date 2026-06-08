@@ -4,14 +4,13 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "../../store/index";
 import { logoutUser } from "../../store/slices/authSlice";
 import { useSocket } from "./SocketProvider";
+import { cn } from "../../lib/utils";
 import {
   LayoutDashboard, MessageSquare, Bell, Video, User,
   FileText, Briefcase, Users, Settings, LogOut,
   ChevronLeft, ChevronRight, Menu, X, Phone, Moon, Sun,
-  CreditCard, DollarSign, ExternalLink,
+  CreditCard, DollarSign, ExternalLink, Bot,
 } from "lucide-react";
-
-function cn(...c) { return c.filter(Boolean).join(" "); }
 
 const NAVY  = "#0A1A3F";
 const NAVY2 = "#0d2250";
@@ -25,19 +24,21 @@ const roleConfig = {
   client: {
     label: "Client", dot: "#3b82f6",
     tools: [
-      { label: "My Cases",  href: "cases",     icon: FileText },
-      { label: "My Lawyer", href: "my-lawyer", icon: Briefcase },
-      { label: "Payments",  href: "payments",  icon: CreditCard },   // ← NEW
+      { label: "My Cases",       href: "cases",        icon: FileText },
+      { label: "My Lawyer",      href: "my-lawyer",    icon: Briefcase },
+      { label: "Payments",       href: "payments",     icon: CreditCard },
+      { label: "AI Assistant",   href: "ai-assistant", icon: Bot },
     ],
     toolsLabel: "Client Tools",
   },
   lawyer: {
     label: "Lawyer", dot: "#10b981",
     tools: [
-      { label: "My Cases",    href: "cases",        icon: FileText },
-      { label: "Client List", href: "client-list",  icon: Users },
-      { label: "Earnings",    href: "earnings",     icon: DollarSign },    // ← NEW
-      { label: "Stripe Setup", href: "stripe-setup", icon: ExternalLink }, // ← NEW
+      { label: "My Cases",     href: "cases",        icon: FileText },
+      { label: "Client List",  href: "client-list",  icon: Users },
+      { label: "Earnings",     href: "earnings",     icon: DollarSign },
+      { label: "Stripe Setup", href: "stripe-setup", icon: ExternalLink },
+      { label: "AI Tools",     href: "ai-tools",     icon: Bot },
     ],
     toolsLabel: "Lawyer Tools",
   },
