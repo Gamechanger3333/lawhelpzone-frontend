@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from "../../store/index";
 import { logoutUser } from "../../store/slices/authSlice";
 import { useSocket } from "./SocketProvider";
 import { cn } from "../../lib/utils";
+import AiChatWidget from "./AiChatWidget";
 import {
   LayoutDashboard, MessageSquare, Bell, Video, User,
   FileText, Briefcase, Users, Settings, LogOut,
@@ -420,6 +421,9 @@ export default function DashboardLayout({ children, role }) {
           })}
         </nav>
       </div>
+
+      {/* ── Floating AI Chat Widget — visible to client + lawyer on all pages ── */}
+      {(role === "client" || role === "lawyer") && <AiChatWidget />}
 
       <style>{`
         @keyframes badgePop {
