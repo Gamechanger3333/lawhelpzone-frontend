@@ -48,7 +48,8 @@ const roleConfig = {
     tools: [
       { label: "User Management", href: "user-management", icon: Users },
       { label: "System Settings", href: "system-settings", icon: Settings },
-      { label: "Payments",        href: "payments",        icon: CreditCard }, // ← NEW
+      { label: "Payments",        href: "payments",        icon: CreditCard },
+      { label: "AI Assistant",    href: "ai-assistant",    icon: Bot },
     ],
     toolsLabel: "Admin Tools",
   },
