@@ -73,13 +73,21 @@ function PlatformInsights() {
     finally { setL(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  // Auto-load removed — admin clicks "Generate Insights" to avoid burning free-tier Gemini quota
 
   const stats = data?.stats;
   const ins   = data?.insights;
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+      {/* Empty state — shown before first load */}
+      {!data && !loading && !error && (
+        <div style={{ textAlign:"center", padding:"32px 0 16px" }}>
+          <p style={{ margin:"0 0 6px", fontSize:14, fontWeight:600, color:"var(--text-heading,#0f172a)" }}>No insights loaded yet</p>
+          <p style={{ margin:0, fontSize:12, color:"var(--text-muted,#64748b)" }}>Click 'Generate Insights' to analyse your platform data.</p>
+        </div>
+      )}
+
       {/* Stats grid */}
       {stats && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))", gap:10, animation:"fd 0.4s ease" }}>
@@ -180,7 +188,7 @@ function PlatformInsights() {
       <button className="ai-btn" onClick={load} disabled={loading}
         style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, padding:"11px 0", borderRadius:12, background:loading?"#e2e8f0":RED, color:loading?"#94a3b8":"#fff", border:"none", fontWeight:700, fontSize:13, boxShadow:loading?"none":"0 4px 14px rgba(239,68,68,0.3)" }}>
         <RefreshCw size={14} style={{ animation:loading?"spin 1s linear infinite":"none" }} />
-        {loading ? "Refreshing…" : "Refresh Insights"}
+        {loading ? "Generating…" : data ? "Refresh Insights" : "Generate Insights"}
       </button>
     </div>
   );
