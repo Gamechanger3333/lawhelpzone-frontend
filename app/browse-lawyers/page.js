@@ -17,9 +17,9 @@ const authHeaders = () => ({
 });
 
 const SPECIALIZATIONS = [
-  "All Specializations", "Criminal Law", "Family Law", "Business Law",
-  "Real Estate", "Personal Injury", "Estate Planning", "Employment Law",
-  "Tax Law", "Immigration", "Intellectual Property", "Constitutional Law",
+  "All Specializations", "Business Law", "Criminal Law", "Family Law",
+  "Immigration Law", "Real Estate Law", "Employment Law",
+  "Intellectual Property", "Corporate Law", "Tax Law", "Contract Law",
 ];
 
 /* ── Lawyer Card ─────────────────────────────────────────────────────────── */

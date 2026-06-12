@@ -424,7 +424,7 @@ export default function DashboardLayout({ children, role }) {
       </div>
 
       {/* ── Floating AI Chat Widget — visible to client + lawyer on all pages ── */}
-      {(role === "client" || role === "lawyer") && <AiChatWidget />}
+      {(role === "client" || role === "lawyer" || role === "admin") && <AiChatWidget />}
 
       <style>{`
         @keyframes badgePop {

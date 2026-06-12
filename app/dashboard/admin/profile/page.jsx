@@ -19,6 +19,13 @@ const tok = () => (typeof window !== "undefined" ? localStorage.getItem("token")
 const HJ  = () => ({ "Content-Type": "application/json", ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
 const H   = () => ({ ...(tok() ? { Authorization: `Bearer ${tok()}` } : {}) });
 
+// Must match Case.js category enum / signup specialization options
+const LAW_CATEGORIES = [
+  "Business Law", "Criminal Law", "Family Law", "Immigration Law",
+  "Real Estate Law", "Employment Law", "Intellectual Property",
+  "Corporate Law", "Tax Law", "Contract Law",
+];
+
 /* ── Toast ──────────────────────────────────────────────────────────── */
 function Toast({ msg, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, []);
@@ -109,6 +116,41 @@ function TagInput({ label, value = [], onChange }) {
           placeholder="Type and press Enter…"
           style={{ border: "none", outline: "none", fontSize: 13, background: "transparent", color: "var(--text-primary,#0f172a)", minWidth: 120, flex: 1 }}
         />
+      </div>
+    </div>
+  );
+}
+
+/* ── Specialization Picker (fixed category list) ───────────────────────── */
+function SpecializationPicker({ value = [], onChange }) {
+  const toggle = (cat) => {
+    onChange(value.includes(cat) ? value.filter(c => c !== cat) : [...value, cat]);
+  };
+  return (
+    <div style={{ gridColumn: "span 2" }}>
+      <label style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted,#64748b)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+        Specializations / Areas of Practice
+      </label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {LAW_CATEGORIES.map(cat => {
+          const selected = value.includes(cat);
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => toggle(cat)}
+              style={{
+                fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 20,
+                border: selected ? "1px solid #3b82f6" : "1px solid var(--border-color,#e2e8f0)",
+                background: selected ? "#3b82f6" : "var(--input-bg,#fff)",
+                color: selected ? "#fff" : "var(--text-muted,#64748b)",
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -398,7 +440,7 @@ export default function ProfilePage() {
             <Field label="University"        value={lawyerP.university}        onChange={v => upLawyer("university", v)}        icon={BookOpen}  placeholder="Harvard Law School" />
             <Field label="Graduation Year"   value={lawyerP.graduationYear}    onChange={v => upLawyer("graduationYear", v)}    icon={BookOpen}  placeholder="2015" />
             <TextArea label="Professional Bio" value={lawyerP.bio} onChange={v => upLawyer("bio", v)} placeholder="Describe your legal expertise…" rows={3} />
-            <TagInput label="Specializations" value={lawyerP.specializations || []} onChange={v => upLawyer("specializations", v)} />
+            <SpecializationPicker value={lawyerP.specializations || []} onChange={v => upLawyer("specializations", v)} />
             <TagInput label="Languages" value={lawyerP.languages || []} onChange={v => upLawyer("languages", v)} />
             <TagInput label="Courts" value={lawyerP.courts || []} onChange={v => upLawyer("courts", v)} />
           </Section>

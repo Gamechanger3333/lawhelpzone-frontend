@@ -13,6 +13,13 @@ const ROLES = [
   { value: "lawyer", label: "Lawyer", icon: Briefcase,gradient: "linear-gradient(135deg, #1e3a8a, #1e40af)", selectedBg: "#eff6ff", selectedBorder: "#1e40af" },
 ];
 
+// Must match Case.js category enum / lawyerProfile.specializations options
+const LAW_CATEGORIES = [
+  "Business Law", "Criminal Law", "Family Law", "Immigration Law",
+  "Real Estate Law", "Employment Law", "Intellectual Property",
+  "Corporate Law", "Tax Law", "Contract Law",
+];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 18 },
   show:   { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
@@ -30,7 +37,7 @@ export default function SignUpPage() {
   const dispatch = useAppDispatch();
 
   const [form, setForm] = useState({
-    fullName: "", email: "", password: "", confirmPassword: "", role: "client",
+    fullName: "", email: "", password: "", confirmPassword: "", role: "client", specializations: [],
   });
   const [errors,       setErrors]       = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +58,8 @@ export default function SignUpPage() {
       e.password = "Password must be at least 8 characters";
     if (form.password !== form.confirmPassword)
       e.confirmPassword = "Passwords do not match";
+    if (form.role === "lawyer" && (!form.specializations || form.specializations.length === 0))
+      e.specializations = "Select at least one area of practice";
     return e;
   };
 
@@ -58,6 +67,13 @@ export default function SignUpPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
     setGeneralError("");
+  };
+
+  const toggleSpecialization = (cat) => {
+    const current = form.specializations || [];
+    const next = current.includes(cat) ? current.filter(c => c !== cat) : [...current, cat];
+    setForm({ ...form, specializations: next });
+    setErrors({ ...errors, specializations: "" });
   };
 
   const handleSubmit = async (e) => {
@@ -169,6 +185,41 @@ export default function SignUpPage() {
               <input id="fullName" name="fullName" type="text" value={form.fullName} onChange={handleChange} placeholder="John Doe" className={inputCls("fullName")} />
               <AnimatePresence>{errors.fullName && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs text-red-500 font-medium">{errors.fullName}</motion.p>}</AnimatePresence>
             </motion.div>
+
+            {/* Specializations — lawyers only */}
+            <AnimatePresence>
+              {form.role === "lawyer" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-1.5 overflow-hidden"
+                >
+                  <label className="text-sm font-semibold text-slate-700">Areas of Practice / Specializations</label>
+                  <p className="text-xs text-slate-500">Select all that apply — clients will find you when searching these categories.</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {LAW_CATEGORIES.map((cat) => {
+                      const selected = (form.specializations || []).includes(cat);
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => toggleSpecialization(cat)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150 ${
+                            selected
+                              ? "bg-blue-700 text-white border-blue-700"
+                              : "bg-slate-50 text-slate-600 border-slate-200 hover:border-blue-300"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <AnimatePresence>{errors.specializations && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="text-xs text-red-500 font-medium">{errors.specializations}</motion.p>}</AnimatePresence>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Email */}
             <motion.div variants={fadeUp} className="space-y-1.5">
