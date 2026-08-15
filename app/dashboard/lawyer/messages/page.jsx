@@ -711,8 +711,18 @@ function AudioBubble({ src, mine, duration = 0 }) {
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); }
-    else { a.play(); setPlaying(true); }
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+      return;
+    }
+    if (!src) return;
+    a.play()
+      .then(() => setPlaying(true))
+      .catch((err) => {
+        console.error("Voice message playback failed:", err.message);
+        setPlaying(false);
+      });
   };
 
   const onTimeUpdate = () => {

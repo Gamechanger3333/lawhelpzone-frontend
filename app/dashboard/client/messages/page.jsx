@@ -711,8 +711,24 @@ function AudioBubble({ src, mine, duration = 0 }) {
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
-    if (playing) { a.pause(); setPlaying(false); }
-    else { a.play(); setPlaying(true); }
+    if (playing) {
+      a.pause();
+      setPlaying(false);
+      return;
+    }
+    // src can be empty/not-yet-loaded (e.g. a voice message whose upload
+    // is still in flight) — playing in that state is what triggered
+    // "NotSupportedError: no supported sources". Guard against it, and
+    // catch the play() promise itself since browsers reject it (not throw
+    // synchronously) when playback can't start, which was showing up as
+    // an unhandled promise rejection in the console.
+    if (!src) return;
+    a.play()
+      .then(() => setPlaying(true))
+      .catch((err) => {
+        console.error("Voice message playback failed:", err.message);
+        setPlaying(false);
+      });
   };
 
   const onTimeUpdate = () => {
