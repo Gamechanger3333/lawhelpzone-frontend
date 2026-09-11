@@ -37,11 +37,18 @@ const SUGGESTIONS = {
     "What are my tenant rights?",
     "Explain contract breach",
   ],
+  guest: [
+    "How does LawHelpZone work?",
+    "How do I find a lawyer here?",
+    "What is a legal notice?",
+    "What are my tenant rights?",
+  ],
 };
 
 export default function AiChatWidget() {
   const { user } = useAppSelector((s) => s.auth);
-  const role = user?.role || "client";
+  const isGuest = !user;
+  const role = user?.role || "guest";
 
   const [open,    setOpen]    = useState(false);
   const [input,   setInput]   = useState("");
@@ -53,7 +60,11 @@ export default function AiChatWidget() {
 
   const isAdmin = role === "admin";
   const accentColor = isAdmin ? "#ef4444" : NAVY;
-  const endpoint = isAdmin ? `${API}/api/ai/admin-chat` : `${API}/api/ai/chat`;
+  const endpoint = isAdmin
+    ? `${API}/api/ai/admin-chat`
+    : isGuest
+    ? `${API}/api/ai/public-chat`
+    : `${API}/api/ai/chat`;
   const suggested = SUGGESTIONS[role] || SUGGESTIONS.client;
 
   useEffect(() => {
@@ -117,6 +128,8 @@ export default function AiChatWidget() {
   const welcomeTitle   = isAdmin ? "Admin Intelligence Hub" : "Legal Information Assistant";
   const welcomeDesc    = isAdmin
     ? "Ask me about platform stats, user activity, case trends, or get operational insights."
+    : isGuest
+    ? "Ask me about legal topics or how LawHelpZone works. Sign up or log in for help with your specific case."
     : "Ask me about legal topics, procedures, or your rights. I provide general information only.";
 
   return (
