@@ -39,13 +39,12 @@ export default function LoginPage() {
     setError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const performLogin = async (credentials) => {
     setLoading(true);
     setError("");
 
     // ── Dispatch to Redux so the store is populated BEFORE navigation ──
-    const result = await dispatch(loginUser(form));
+    const result = await dispatch(loginUser(credentials));
 
     if (loginUser.rejected.match(result)) {
       setError(result.payload || "Login failed");
@@ -61,6 +60,20 @@ export default function LoginPage() {
     else                        router.push("/");
 
     setLoading(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await performLogin(form);
+  };
+
+  // "Try Demo Account" — fills the visible fields (so it's clear what's
+  // happening) and logs straight in, no real signup/OTP/email verification
+  // needed. Demo credentials also documented in README.md.
+  const handleDemoLogin = async () => {
+    const demoCredentials = { email: "demo@lawhelpzone.com", password: "Demo@1234" };
+    setForm(demoCredentials);
+    await performLogin(demoCredentials);
   };
 
   const inputCls = (hasErr) =>
@@ -172,6 +185,20 @@ export default function LoginPage() {
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign In"}
               </motion.button>
+            </motion.div>
+
+            <motion.div variants={fadeUp}>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full h-11 flex items-center justify-center gap-2 rounded-xl text-sm font-semibold text-slate-700 border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "🚀 Try Demo Account"}
+              </button>
+              <p className="text-center text-xs text-slate-400 mt-1.5">
+                Instantly explore the platform — no signup required
+              </p>
             </motion.div>
 
             <motion.p variants={fadeUp} className="text-center text-sm text-slate-500 pt-1">
