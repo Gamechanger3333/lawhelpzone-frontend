@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 const API       = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -186,9 +187,7 @@ function LawyerSearch({ router }) {
                     onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
                     {/* Avatar */}
                     <div style={{ position: "relative", width: 40, height: 40, borderRadius: "50%", overflow: "hidden", border: "2px solid #e2e8f0", flexShrink: 0 }}>
-                      {l.profileImage
-                        ? <img src={l.profileImage} style={{ width: 40, height: 40, objectFit: "cover" }} alt="" />
-                        : <div style={{ width: 40, height: 40, background: "#0A1A3F", color: "#fff", fontWeight: 800, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center" }}>{name.charAt(0)}</div>}
+                      <img src={resolveAvatarUrl(l, 80)} style={{ width: 40, height: 40, objectFit: "cover" }} alt={name} />
                       {isAvail && <span style={{ position: "absolute", bottom: 1, right: 1, width: 11, height: 11, background: "#10b981", border: "2px solid #fff", borderRadius: "50%" }} />}
                     </div>
 
@@ -455,10 +454,8 @@ export default function BecomeALawyerPage() {
                 const lp = l.lawyerProfile || {};
                 return (
                   <div key={l._id} className="res-card" style={{ background: "var(--card-bg,#fff)", borderRadius: 16, border: "1px solid var(--border-color,#e2e8f0)", padding: 20, textAlign: "center" }}>
-                    <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#10b981", color: "#fff", fontSize: 20, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", overflow: "hidden" }}>
-                      {l.profileImage
-                        ? <img src={l.profileImage} style={{ width: 52, height: 52, objectFit: "cover" }} alt="" />
-                        : (l.name || "L").charAt(0)}
+                    <div style={{ width: 52, height: 52, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", overflow: "hidden" }}>
+                      <img src={resolveAvatarUrl(l, 104)} style={{ width: 52, height: 52, objectFit: "cover", borderRadius: "50%" }} alt={l.name || "Lawyer"} />
                     </div>
                     <h4 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "var(--text-heading,#0f172a)" }}>{l.name}</h4>
                     <p style={{ margin: "0 0 12px", fontSize: 12, color: "#3b82f6" }}>{lp.specializations?.[0] || "Lawyer"}</p>

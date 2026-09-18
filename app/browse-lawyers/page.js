@@ -7,6 +7,7 @@ import {
   SlidersHorizontal, Award,
 } from "lucide-react";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import LawyerSearchDropdown from "../components/LawyerSearchDropdown";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -50,9 +51,7 @@ function LawyerCard({ lawyer, onMessage, onCall, index }) {
       <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 100%)", padding: "20px 20px 0", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 14 }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#fff", overflow: "hidden", border: "3px solid rgba(255,255,255,0.3)", flexShrink: 0, marginBottom: -24, zIndex: 1, position: "relative" }}>
-            {lawyer.profileImage
-              ? <img src={lawyer.profileImage} style={{ width: 72, height: 72, objectFit: "cover" }} alt="" />
-              : <div style={{ width: 72, height: 72, background: "#10b981", color: "#fff", fontSize: 26, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>{name.charAt(0)}</div>}
+            <img src={resolveAvatarUrl(lawyer, 144)} style={{ width: 72, height: 72, objectFit: "cover" }} alt={name} />
             {isAvail && <span style={{ position: "absolute", bottom: 4, right: 4, width: 14, height: 14, borderRadius: "50%", background: "#10b981", border: "2px solid #fff" }} />}
           </div>
           <div style={{ paddingBottom: 28, flex: 1 }}>

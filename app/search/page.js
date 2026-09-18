@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, Star, CheckCircle, Filter, Loader2, ChevronDown, MessageSquare, Video } from "lucide-react";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken = () => typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -194,9 +195,7 @@ function SearchContent() {
                         <div className="flex items-start gap-4">
                           {/* Avatar */}
                           <div className="relative shrink-0">
-                            {lawyer.profileImage
-                              ? <img src={lawyer.profileImage} alt={name} className="w-14 h-14 rounded-full object-cover border-2 border-gray-100" />
-                              : <div className="w-14 h-14 rounded-full bg-[#0A1A3F] text-white font-bold text-lg flex items-center justify-center border-2 border-gray-100">{name.charAt(0)}</div>}
+                            <img src={resolveAvatarUrl(lawyer, 112)} alt={name} className="w-14 h-14 rounded-full object-cover border-2 border-gray-100" />
                             {isAvail && <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full" />}
                           </div>
 
