@@ -394,15 +394,15 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(165px,1fr))", gap: 14, marginBottom: 28 }}>
         {[
-          { label: "Total Users",      value: stats.totalUsers      || 0, icon: Users,      gradient: "linear-gradient(135deg,#f87171,#dc2626)" },
-          { label: "Lawyers",          value: stats.totalLawyers    || 0, icon: Briefcase,  gradient: "linear-gradient(135deg,#34d399,#059669)" },
-          { label: "Clients",          value: stats.totalClients    || 0, icon: UserCheck,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: "Cases This Month", value: stats.thisMonthCases  || 0, icon: BarChart3,  gradient: "linear-gradient(135deg,#fbbf24,#d97706)" },
-          { label: "Open Cases",       value: stats.openCases       || 0, icon: Scale,      gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
-          { label: "System Health",    value: stats.systemHealth    || "99.9%", icon: Shield, gradient: "linear-gradient(135deg,#34d399,#059669)" },
+          { label: "Total Users",      value: stats.totalUsers      || 0, icon: Users,      accent: "#9f1239" },
+          { label: "Lawyers",          value: stats.totalLawyers    || 0, icon: Briefcase,  accent: "#0f766e" },
+          { label: "Clients",          value: stats.totalClients    || 0, icon: UserCheck,  accent: "#1e3a5f" },
+          { label: "Cases This Month", value: stats.thisMonthCases  || 0, icon: BarChart3,  accent: "#92400e" },
+          { label: "Open Cases",       value: stats.openCases       || 0, icon: Scale,      accent: "#4c1d6e" },
+          { label: "System Health",    value: stats.systemHealth    || "99.9%", icon: Shield, accent: "#155e75" },
         ].map((s, i) => (
           loading
-            ? <div key={s.label} style={{ borderRadius: 20, minHeight: 128, background: "#e2e8f0" }} className="skel" />
+            ? <div key={s.label} style={{ borderRadius: 12, minHeight: 108, background: "#e2e8f0" }} className="skel" />
             : <StatCard key={s.label} {...s} index={i} />
         ))}
       </div>

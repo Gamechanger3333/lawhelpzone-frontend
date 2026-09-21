@@ -283,10 +283,10 @@ export default function ClientDashboard() {
   };
 
   const STATS = [
-    { label: "Active Cases", value: stats.activeCases   || 0, icon: Briefcase,     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", trend: "+ live" },
-    { label: "Total Cases",  value: stats.totalCases    || 0, icon: FileText,      gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", trend: "all time" },
-    { label: "Resolved",     value: stats.resolvedCases || 0, icon: CheckCircle,   gradient: "linear-gradient(135deg,#34d399,#059669)", trend: "closed" },
-    { label: "Unread Msgs",  value: msgBadge,                 icon: MessageSquare, gradient: "linear-gradient(135deg,#fbbf24,#d97706)", trend: "inbox" },
+    { label: "Active Cases", value: stats.activeCases   || 0, icon: Briefcase,     accent: "#1e3a5f", trend: "live" },
+    { label: "Total Cases",  value: stats.totalCases    || 0, icon: FileText,      accent: "#4c1d6e", trend: "all time" },
+    { label: "Resolved",     value: stats.resolvedCases || 0, icon: CheckCircle,   accent: "#0f766e", trend: "closed" },
+    { label: "Unread Msgs",  value: msgBadge,                 icon: MessageSquare, accent: "#92400e", trend: "inbox" },
   ];
 
   const goMessages = () => {

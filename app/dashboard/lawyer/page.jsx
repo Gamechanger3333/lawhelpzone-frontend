@@ -172,12 +172,12 @@ export default function LawyerDashboard() {
   });
 
   const STATS = [
-    { label: "Active Cases",    value: stats.activeCases   || 0, gradient: "linear-gradient(135deg,#34d399,#059669)", emoji: "📁", sub: "Currently handling"   },
-    { label: "Cases Closed",    value: stats.closedCases   || 0, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", emoji: "✅", sub: "Successfully resolved" },
-    { label: "Clients",         value: stats.totalClients  || 0, gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", emoji: "👤", sub: "Total relationships"   },
-    { label: "Proposals Sent",  value: stats.proposalsSent || 0, gradient: "linear-gradient(135deg,#fbbf24,#d97706)", emoji: "📨", sub: "Awaiting response"     },
-    { label: "Open Cases",      value: stats.openAvailable ?? avail.length, gradient: "linear-gradient(135deg,#22d3ee,#0891b2)", emoji: "🔍", sub: "Available to apply" },
-    { label: "Unread Messages", value: msgBadge,                 gradient: "linear-gradient(135deg,#f472b6,#db2777)", emoji: "💬", sub: "Needs attention"       },
+    { label: "Active Cases",    value: stats.activeCases   || 0, accent: "#0f766e", emoji: "📁", sub: "Currently handling"   },
+    { label: "Cases Closed",    value: stats.closedCases   || 0, accent: "#1e3a5f", emoji: "✅", sub: "Successfully resolved" },
+    { label: "Clients",         value: stats.totalClients  || 0, accent: "#4c1d6e", emoji: "👤", sub: "Total relationships"   },
+    { label: "Proposals Sent",  value: stats.proposalsSent || 0, accent: "#92400e", emoji: "📨", sub: "Awaiting response"     },
+    { label: "Open Cases",      value: stats.openAvailable ?? avail.length, accent: "#155e75", emoji: "🔍", sub: "Available to apply" },
+    { label: "Unread Messages", value: msgBadge,                 accent: "#831843", emoji: "💬", sub: "Needs attention"       },
   ];
 
   const QUICK = [

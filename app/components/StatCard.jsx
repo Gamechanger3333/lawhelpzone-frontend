@@ -2,10 +2,10 @@
 // app/components/StatCard.jsx
 //
 // Shared "hero stat" card used across the client, lawyer and admin
-// dashboards. Replaces the old flat white box (icon badge + number + label)
-// with a colored gradient card that has real depth: a soft glow, a
-// decorative blurred orb, and a glassy icon chip — so every dashboard reads
-// as one modern, deliberately-designed surface instead of a wireframe.
+// dashboards. Deliberately restrained: a white card, a single muted accent
+// color (left bar + icon chip), serious typography. No candy gradients, no
+// floating bubble decorations — this is a legal-services dashboard, not a
+// game HUD.
 import { useState, useEffect } from "react";
 
 function Counter({ to = 0, duration = 700 }) {
@@ -24,41 +24,42 @@ function Counter({ to = 0, duration = 700 }) {
   return n.toLocaleString();
 }
 
-export default function StatCard({ label, value, icon: Icon, emoji, sub, gradient, trend, index = 0 }) {
+export default function StatCard({ label, value, icon: Icon, emoji, sub, accent = "#1e3a5f", trend, index = 0 }) {
   return (
     <div
       className="hero-stat-card"
       style={{
         position: "relative",
-        overflow: "hidden",
-        borderRadius: 20,
-        padding: "22px 22px 20px",
-        background: gradient,
-        boxShadow: "0 10px 30px -8px rgba(15,23,42,0.28)",
-        animation: `fd 0.5s ease ${index * 0.08}s both`,
-        minHeight: 128,
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 14,
+        background: "#fff",
+        border: "1px solid #e6e9ef",
+        borderLeft: `4px solid ${accent}`,
+        borderRadius: 12,
+        padding: "18px 20px",
+        boxShadow: "0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04)",
+        animation: `fd 0.4s ease ${index * 0.06}s both`,
+        minHeight: 108,
       }}
     >
-      {/* decorative glow orb */}
-      <div style={{ position: "absolute", top: -30, right: -30, width: 110, height: 110, borderRadius: "50%", background: "rgba(255,255,255,0.16)", filter: "blur(2px)" }} />
-      <div style={{ position: "absolute", bottom: -40, right: 20, width: 70, height: 70, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
-
-      <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(255,255,255,0.22)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: emoji ? 19 : undefined }}>
-          {Icon ? <Icon size={20} style={{ color: "#fff" }} /> : emoji}
-        </div>
-        {trend && (
-          <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.18)", borderRadius: 20, padding: "3px 8px" }}>
-            {trend}
-          </span>
-        )}
+      <div style={{
+        width: 42, height: 42, borderRadius: 9, background: accent, flexShrink: 0,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: emoji ? 18 : undefined,
+      }}>
+        {Icon ? <Icon size={19} style={{ color: "#fff" }} /> : emoji}
       </div>
 
-      <p style={{ position: "relative", margin: "16px 0 0", fontSize: 32, fontWeight: 800, color: "#fff", lineHeight: 1, letterSpacing: "-0.02em" }}>
-        {typeof value === "number" ? <Counter to={value} /> : value}
-      </p>
-      <p style={{ position: "relative", margin: "6px 0 0", fontSize: 13, color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>{label}</p>
-      {sub && <p style={{ position: "relative", margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{sub}</p>}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+          <p style={{ margin: 0, fontSize: 26, fontWeight: 700, color: "#0f172a", lineHeight: 1.1, letterSpacing: "-0.01em" }}>
+            {typeof value === "number" ? <Counter to={value} /> : value}
+          </p>
+          {trend && <span style={{ fontSize: 10.5, fontWeight: 600, color: "#94a3b8", whiteSpace: "nowrap" }}>{trend}</span>}
+        </div>
+        <p style={{ margin: "3px 0 0", fontSize: 12.5, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.03em" }}>{label}</p>
+        {sub && <p style={{ margin: "2px 0 0", fontSize: 11.5, color: "#94a3b8" }}>{sub}</p>}
+      </div>
     </div>
   );
 }
