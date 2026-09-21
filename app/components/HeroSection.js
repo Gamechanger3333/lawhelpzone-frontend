@@ -3,12 +3,23 @@
 import { ShieldCheck, Users, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 import LawyerSearchDropdown from "./LawyerSearchDropdown";
+import { LEGAL_IMAGES } from "@/lib/images";
 
 const HeroSection = () => {
   const router = useRouter();
 
   return (
-    <div className="bg-[#0A1A3F] text-white relative overflow-hidden">
+    <div className="text-white relative overflow-hidden">
+      {/* Real photo background, dimmed under the navy so text stays crisp */}
+      <div
+        style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `url(${LEGAL_IMAGES.courthouse})`,
+          backgroundSize: "cover", backgroundPosition: "center",
+        }}
+      />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(115deg, rgba(10,26,63,0.96) 0%, rgba(10,26,63,0.93) 45%, rgba(10,26,63,0.8) 100%)" }} />
+
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-20 min-h-[700px] sm:min-h-[750px] lg:min-h-[600px] flex flex-col lg:flex-row items-center relative">
 
         {/* Left Content */}
@@ -63,13 +74,19 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Right Side Image */}
-        <div className="absolute bottom-0 left-1/2 lg:left-auto lg:right-0 -translate-x-1/2 lg:translate-x-0 w-full lg:w-1/2 flex justify-center lg:justify-end pointer-events-none">
-          <img
-            src="./images/backgroun.png"
-            alt="Legal Expert"
-            className="w-auto h-[320px] sm:h-[400px] lg:h-[560px] object-contain"
-          />
+        {/* Right Side — real photo, framed */}
+        <div className="absolute bottom-0 left-1/2 lg:left-auto lg:right-0 -translate-x-1/2 lg:translate-x-0 w-full lg:w-1/2 flex justify-center lg:justify-end pointer-events-none px-4 lg:px-0">
+          <div style={{
+            width: "min(440px, 90%)", borderRadius: 20, overflow: "hidden",
+            border: "1px solid rgba(255,255,255,0.15)", boxShadow: "0 24px 60px -12px rgba(0,0,0,0.5)",
+            marginBottom: 24,
+          }}>
+            <img
+              src={LEGAL_IMAGES.handshake}
+              alt="Lawyer and client shaking hands after reaching an agreement"
+              style={{ width: "100%", height: 340, objectFit: "cover", display: "block" }}
+            />
+          </div>
         </div>
       </div>
     </div>

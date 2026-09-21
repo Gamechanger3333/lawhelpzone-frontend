@@ -12,6 +12,7 @@ import {
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { resolveAvatarUrl } from "@/lib/avatar";
+import { LEGAL_IMAGES } from "@/lib/images";
 
 const API       = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -264,7 +265,9 @@ export default function BecomeALawyerPage() {
       <Header />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 60%,#1a3560 100%)", padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${LEGAL_IMAGES.gavel})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(10,26,63,0.94) 0%,rgba(30,58,110,0.9) 60%,rgba(26,53,96,0.94) 100%)" }} />
         <div style={{ maxWidth: 700, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 20, padding: "6px 16px", marginBottom: 20, fontSize: 13, color: "#34d399", fontWeight: 700 }}>
             <Scale size={14} /> Join 500+ Lawyers on Our Platform

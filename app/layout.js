@@ -2,6 +2,7 @@ import ReduxProvider from "./providers/ReduxProvider";
 import SocketProvider from "./components/SocketProvider";
 import { ThemeInitScript } from "./components/ThemeInitScript";
 import AiChatWidget from "./components/AiChatWidget";
+import ScrollToTop from "./components/ScrollToTop";
 import "./globals.css";
 
 export const metadata = {
@@ -78,6 +79,7 @@ export default function RootLayout({ children }) {
         <ReduxProvider>
           <SocketProvider>{children}</SocketProvider>
           <AiChatWidget />
+          <ScrollToTop />
         </ReduxProvider>
       </body>
     </html>
