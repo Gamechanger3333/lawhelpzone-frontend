@@ -13,6 +13,7 @@ import {
   X, Search, Video, Trash2, CheckCircle, AlertTriangle, Bell,
   Send, CreditCard,                                              // ← CreditCard added
 } from "lucide-react";
+import StatCard from "@/app/components/StatCard";
 
 const API  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -393,23 +394,16 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(165px,1fr))", gap: 14, marginBottom: 28 }}>
         {[
-          { l: "Total Users",      v: stats.totalUsers      || 0, icon: Users,      c: "#ef4444", b: "#fef2f2" },
-          { l: "Lawyers",          v: stats.totalLawyers    || 0, icon: Briefcase,  c: "#10b981", b: "#f0fdf4" },
-          { l: "Clients",          v: stats.totalClients    || 0, icon: UserCheck,  c: "#3b82f6", b: "#eff6ff" },
-          { l: "Cases This Month", v: stats.thisMonthCases  || 0, icon: BarChart3,  c: "#f59e0b", b: "#fffbeb" },
-          { l: "Open Cases",       v: stats.openCases       || 0, icon: Scale,      c: "#8b5cf6", b: "#f5f3ff" },
-          { l: "System Health",    v: stats.systemHealth    || "99.9%", icon: Shield, c: "#10b981", b: "#f0fdf4" },
+          { label: "Total Users",      value: stats.totalUsers      || 0, icon: Users,      gradient: "linear-gradient(135deg,#f87171,#dc2626)" },
+          { label: "Lawyers",          value: stats.totalLawyers    || 0, icon: Briefcase,  gradient: "linear-gradient(135deg,#34d399,#059669)" },
+          { label: "Clients",          value: stats.totalClients    || 0, icon: UserCheck,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "Cases This Month", value: stats.thisMonthCases  || 0, icon: BarChart3,  gradient: "linear-gradient(135deg,#fbbf24,#d97706)" },
+          { label: "Open Cases",       value: stats.openCases       || 0, icon: Scale,      gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
+          { label: "System Health",    value: stats.systemHealth    || "99.9%", icon: Shield, gradient: "linear-gradient(135deg,#34d399,#059669)" },
         ].map((s, i) => (
-          <div key={s.l} className="ch" style={{ background: "#fff", borderRadius: 18, padding: "18px 20px", border: "1px solid #f1f5f9", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", animation: `fd 0.4s ease ${i * 0.07}s both` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: s.b, display: "flex", alignItems: "center", justifyContent: "center" }}><s.icon size={18} style={{ color: s.c }} /></div>
-              <TrendingUp size={13} style={{ color: "#10b981" }} />
-            </div>
-            <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>
-              {loading ? <span className="skel" style={{ display: "inline-block", width: 60, height: 26 }} /> : typeof s.v === "number" ? <Counter to={s.v} /> : s.v}
-            </p>
-            <p style={{ margin: "5px 0 0", fontSize: 12, color: "#64748b" }}>{s.l}</p>
-          </div>
+          loading
+            ? <div key={s.label} style={{ borderRadius: 20, minHeight: 128, background: "#e2e8f0" }} className="skel" />
+            : <StatCard key={s.label} {...s} index={i} />
         ))}
       </div>
 

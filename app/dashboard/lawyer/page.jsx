@@ -9,6 +9,7 @@ import {
   ChevronRight, Search, DollarSign,
 } from "lucide-react";
 import StripeSetupBanner from "@/app/components/payment/StripeSetupBanner";
+import StatCard from "@/app/components/StatCard";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -171,12 +172,12 @@ export default function LawyerDashboard() {
   });
 
   const STATS = [
-    { label: "Active Cases",    value: stats.activeCases   || 0, accent: "#10b981", bg: "#f0fdf4", icon: "📁", sub: "Currently handling"   },
-    { label: "Cases Closed",    value: stats.closedCases   || 0, accent: "#3b82f6", bg: "#eff6ff", icon: "✅", sub: "Successfully resolved" },
-    { label: "Clients",         value: stats.totalClients  || 0, accent: "#8b5cf6", bg: "#f5f3ff", icon: "👤", sub: "Total relationships"   },
-    { label: "Proposals Sent",  value: stats.proposalsSent || 0, accent: "#f59e0b", bg: "#fffbeb", icon: "📨", sub: "Awaiting response"     },
-    { label: "Open Cases",      value: stats.openAvailable ?? avail.length, accent: "#06b6d4", bg: "#ecfeff", icon: "🔍", sub: "Available to apply" },
-    { label: "Unread Messages", value: msgBadge,                 accent: "#ec4899", bg: "#fdf2f8", icon: "💬", sub: "Needs attention"       },
+    { label: "Active Cases",    value: stats.activeCases   || 0, gradient: "linear-gradient(135deg,#34d399,#059669)", emoji: "📁", sub: "Currently handling"   },
+    { label: "Cases Closed",    value: stats.closedCases   || 0, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", emoji: "✅", sub: "Successfully resolved" },
+    { label: "Clients",         value: stats.totalClients  || 0, gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", emoji: "👤", sub: "Total relationships"   },
+    { label: "Proposals Sent",  value: stats.proposalsSent || 0, gradient: "linear-gradient(135deg,#fbbf24,#d97706)", emoji: "📨", sub: "Awaiting response"     },
+    { label: "Open Cases",      value: stats.openAvailable ?? avail.length, gradient: "linear-gradient(135deg,#22d3ee,#0891b2)", emoji: "🔍", sub: "Available to apply" },
+    { label: "Unread Messages", value: msgBadge,                 gradient: "linear-gradient(135deg,#f472b6,#db2777)", emoji: "💬", sub: "Needs attention"       },
   ];
 
   const QUICK = [
@@ -322,16 +323,7 @@ export default function LawyerDashboard() {
 
         {/* Stat Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
-          {STATS.map((st, i) => (
-            <div key={st.label} className="stat-card" style={{ "--accent": st.accent, animation: `fadeUp 0.4s ease ${i * 0.06}s both` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: st.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, marginBottom: 12 }}>{st.icon}</div>
-              <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.04em", fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
-                <Counter to={st.value} />
-              </p>
-              <p style={{ margin: "5px 0 0", fontSize: 12.5, fontWeight: 600, color: "#374151" }}>{st.label}</p>
-              <p style={{ margin: "2px 0 0", fontSize: 11, color: "#94a3b8" }}>{st.sub}</p>
-            </div>
-          ))}
+          {STATS.map((st, i) => <StatCard key={st.label} {...st} index={i} />)}
         </div>
 
         {/* Quick Actions */}

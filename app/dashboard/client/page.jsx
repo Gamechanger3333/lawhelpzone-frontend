@@ -9,6 +9,7 @@ import {
   X, FileText, UserCheck, Users, ArrowRight, Search,
 } from "lucide-react";
 import CheckoutModal from "@/app/components/payment/CheckoutModal";
+import StatCard from "@/app/components/StatCard";
 
 const API  = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const tok  = () => (typeof window !== "undefined" ? localStorage.getItem("token") : null);
@@ -282,10 +283,10 @@ export default function ClientDashboard() {
   };
 
   const STATS = [
-    { label: "Active Cases", value: stats.activeCases   || 0, icon: Briefcase,     c: "#3b82f6", b: "#eff6ff" },
-    { label: "Total Cases",  value: stats.totalCases    || 0, icon: FileText,      c: "#8b5cf6", b: "#f5f3ff" },
-    { label: "Resolved",     value: stats.resolvedCases || 0, icon: CheckCircle,   c: "#10b981", b: "#f0fdf4" },
-    { label: "Unread Msgs",  value: msgBadge,                 icon: MessageSquare, c: "#f59e0b", b: "#fffbeb" },
+    { label: "Active Cases", value: stats.activeCases   || 0, icon: Briefcase,     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", trend: "+ live" },
+    { label: "Total Cases",  value: stats.totalCases    || 0, icon: FileText,      gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", trend: "all time" },
+    { label: "Resolved",     value: stats.resolvedCases || 0, icon: CheckCircle,   gradient: "linear-gradient(135deg,#34d399,#059669)", trend: "closed" },
+    { label: "Unread Msgs",  value: msgBadge,                 icon: MessageSquare, gradient: "linear-gradient(135deg,#fbbf24,#d97706)", trend: "inbox" },
   ];
 
   const goMessages = () => {
@@ -326,16 +327,22 @@ export default function ClientDashboard() {
       <style>{css}</style>
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#0f172a" }}>Good {greet}, {name}! 👋</h1>
-          <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 14 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
+      <div style={{
+        position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 24, flexWrap: "wrap", gap: 12, padding: "26px 28px", borderRadius: 22,
+        background: "linear-gradient(120deg,#0A1A3F 0%,#132a5e 55%,#1e3a6e 100%)",
+        boxShadow: "0 14px 34px -12px rgba(10,26,63,0.45)",
+      }}>
+        <div style={{ position: "absolute", top: -60, right: -20, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(59,130,246,0.25),transparent 70%)" }} />
+        <div style={{ position: "relative" }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#fff" }}>Good {greet}, {name}! 👋</h1>
+          <p style={{ margin: "4px 0 0", color: "rgba(255,255,255,0.65)", fontSize: 14 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button onClick={() => loadAll(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+        <div style={{ position: "relative", display: "flex", gap: 10 }}>
+          <button onClick={() => loadAll(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} /> Refresh
           </button>
-          <button onClick={() => setShowM(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+          <button onClick={() => setShowM(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "#10b981", color: "#fff", border: "none", fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 6px 16px rgba(16,185,129,0.4)" }}>
             <Plus size={14} /> New Case
           </button>
         </div>
@@ -343,16 +350,7 @@ export default function ClientDashboard() {
 
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(175px, 1fr))", gap: 16, marginBottom: 28 }}>
-        {STATS.map((st, i) => (
-          <div key={st.label} className="ch" style={{ background: "#fff", borderRadius: 18, padding: "20px 22px", border: "1px solid #f1f5f9", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", animation: `fd 0.5s ease ${i * 0.08}s both` }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: st.b, display: "flex", alignItems: "center", justifyContent: "center" }}><st.icon size={18} style={{ color: st.c }} /></div>
-              <TrendingUp size={13} style={{ color: "#10b981" }} />
-            </div>
-            <p style={{ margin: 0, fontSize: 30, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}><Counter to={st.value} /></p>
-            <p style={{ margin: "5px 0 0", fontSize: 13, color: "#64748b" }}>{st.label}</p>
-          </div>
-        ))}
+        {STATS.map((st, i) => <StatCard key={st.label} {...st} index={i} />)}
       </div>
 
       {/* Quick Actions */}
