@@ -152,12 +152,11 @@ export default function HowItWorksPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "'Georgia', 'Times New Roman', serif", background: "#f8f7f4", minHeight: "100vh", color: "#1a1a2e" }}>
+    <div style={{ fontFamily: "'Inter', sans-serif", background: "#f8f7f4", minHeight: "100vh", color: "#1a1a2e" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Source+Sans+3:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Source Sans 3', sans-serif; }
-        h1,h2,h3,h4 { font-family: 'Playfair Display', Georgia, serif; }
+        body { font-family: 'Inter', sans-serif; }
+        h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
 
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(32px); }
@@ -186,12 +185,12 @@ export default function HowItWorksPage() {
         .faq-item { background: white; border-radius: 12px; border: 1px solid #eee; overflow: hidden; transition: box-shadow 0.3s; }
         .faq-item:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
 
-        .tab-btn { padding: 10px 28px; border-radius: 50px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; font-family: 'Source Sans 3', sans-serif; }
+        .tab-btn { padding: 10px 28px; border-radius: 50px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; font-family: 'Inter', sans-serif; }
 
-        .cta-btn { background: linear-gradient(135deg, #0A1A3F, #1e3a6e); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-size: 17px; font-weight: 600; cursor: pointer; font-family: 'Source Sans 3', sans-serif; transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; }
+        .cta-btn { background: linear-gradient(135deg, #0A1A3F, #1e3a6e); color: white; border: none; padding: 16px 40px; border-radius: 50px; font-size: 17px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; }
         .cta-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(10,26,63,0.4); }
 
-        .secondary-btn { background: transparent; color: #0A1A3F; border: 2px solid #0A1A3F; padding: 14px 36px; border-radius: 50px; font-size: 17px; font-weight: 600; cursor: pointer; font-family: 'Source Sans 3', sans-serif; transition: all 0.3s; }
+        .secondary-btn { background: transparent; color: #0A1A3F; border: 2px solid #0A1A3F; padding: 14px 36px; border-radius: 50px; font-size: 17px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.3s; }
         .secondary-btn:hover { background: #0A1A3F; color: white; }
 
         .connector-line { position: absolute; top: 44px; left: calc(50% + 44px); width: calc(100% - 88px); height: 2px; background: linear-gradient(90deg, #cbd5e1, #94a3b8); z-index: 0; }
@@ -205,13 +204,13 @@ export default function HowItWorksPage() {
         <div style={{ position: "absolute", bottom: -60, left: -60, width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.03)", pointerEvents: "none" }} />
 
         <div style={{ animation: "fadeUp 0.8s ease both", maxWidth: 780, margin: "0 auto" }}>
-          <div style={{ display: "inline-block", background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", padding: "6px 20px", borderRadius: "50px", fontSize: 13, fontWeight: 600, marginBottom: 24, letterSpacing: 1, fontFamily: "'Source Sans 3', sans-serif" }}>
+          <div style={{ display: "inline-block", background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", padding: "6px 20px", borderRadius: "50px", fontSize: 13, fontWeight: 600, marginBottom: 24, letterSpacing: 1, fontFamily: "'Inter', sans-serif" }}>
             SIMPLE · SECURE · EFFECTIVE
           </div>
-          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(42px, 6vw, 72px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 24 }}>
+          <h1 style={{ fontFamily: "'Inter', sans-serif", fontSize: "clamp(42px, 6vw, 72px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 24 }}>
             How LawHelpZone<br /><em style={{ color: "#34d399" }}>Works</em>
           </h1>
-          <p style={{ fontSize: 19, opacity: 0.85, lineHeight: 1.7, marginBottom: 48, fontFamily: "'Source Sans 3', sans-serif", maxWidth: 560, margin: "0 auto 48px" }}>
+          <p style={{ fontSize: 19, opacity: 0.85, lineHeight: 1.7, marginBottom: 48, fontFamily: "'Inter', sans-serif", maxWidth: 560, margin: "0 auto 48px" }}>
             Connecting people with trusted legal expertise has never been this straightforward. From posting your case to resolution — we handle everything in between.
           </p>
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
@@ -230,8 +229,8 @@ export default function HowItWorksPage() {
         <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", padding: "0 24px" }}>
           {stats.map((s, i) => (
             <div key={i} style={{ textAlign: "center", padding: "28px 16px", borderRight: i < 3 ? "1px solid #eee" : "none" }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 28, fontWeight: 700, color: "#0A1A3F" }}>{s.value}</div>
-              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, marginTop: 4, fontFamily: "'Source Sans 3', sans-serif" }}>{s.label}</div>
+              <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 28, fontWeight: 700, color: "#0A1A3F" }}>{s.value}</div>
+              <div style={{ fontSize: 13, color: "#64748b", fontWeight: 500, marginTop: 4, fontFamily: "'Inter', sans-serif" }}>{s.label}</div>
             </div>
           ))}
         </div>
@@ -240,7 +239,7 @@ export default function HowItWorksPage() {
       {/* Role Tabs */}
       <section style={{ padding: "64px 24px 0", textAlign: "center" }}>
         <div ref={register("tabs")} className={`reveal ${visible["tabs"] ? "visible" : ""}`}>
-          <p style={{ fontSize: 14, fontWeight: 600, letterSpacing: 1.5, color: "#64748b", marginBottom: 16, fontFamily: "'Source Sans 3', sans-serif" }}>I AM A</p>
+          <p style={{ fontSize: 14, fontWeight: 600, letterSpacing: 1.5, color: "#64748b", marginBottom: 16, fontFamily: "'Inter', sans-serif" }}>I AM A</p>
           <div style={{ display: "inline-flex", background: "#f1f5f9", borderRadius: "50px", padding: 4, gap: 4 }}>
             {["client", "lawyer"].map((r) => (
               <button key={r} className="tab-btn" onClick={() => setRole(r)}
@@ -270,15 +269,15 @@ export default function HowItWorksPage() {
             <div key={`${role}-${i}`} ref={register(`step-${i}`)} className={`step-card reveal ${visible[`step-${i}`] ? "visible" : ""}`}
               style={{ transitionDelay: `${i * 0.1}s`, position: "relative" }}>
               {/* Step number */}
-              <div style={{ position: "absolute", top: -14, left: 24, background: step.color, color: "white", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, fontFamily: "'Source Sans 3', sans-serif", boxShadow: `0 4px 12px ${step.color}60` }}>
+              <div style={{ position: "absolute", top: -14, left: 24, background: step.color, color: "white", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, fontFamily: "'Inter', sans-serif", boxShadow: `0 4px 12px ${step.color}60` }}>
                 {i + 1}
               </div>
               <div style={{ width: 56, height: 56, borderRadius: 14, background: `${step.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: step.color, marginBottom: 20, marginTop: 8 }}>
                 {step.icon}
               </div>
               <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>{step.title}</h3>
-              <p style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.7, marginBottom: 14, fontFamily: "'Source Sans 3', sans-serif" }}>{step.desc}</p>
-              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, fontFamily: "'Source Sans 3', sans-serif", fontStyle: "italic" }}>{step.detail}</p>
+              <p style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.7, marginBottom: 14, fontFamily: "'Inter', sans-serif" }}>{step.desc}</p>
+              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, fontFamily: "'Inter', sans-serif", fontStyle: "italic" }}>{step.detail}</p>
             </div>
           ))}
         </div>
@@ -288,7 +287,7 @@ export default function HowItWorksPage() {
       <section style={{ background: "white", padding: "80px 24px" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div ref={register("features-head")} className={`reveal ${visible["features-head"] ? "visible" : ""}`} style={{ textAlign: "center", marginBottom: 56 }}>
-            <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1.5, color: "#10b981", marginBottom: 12, fontFamily: "'Source Sans 3', sans-serif" }}>WHY CHOOSE US</p>
+            <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1.5, color: "#10b981", marginBottom: 12, fontFamily: "'Inter', sans-serif" }}>WHY CHOOSE US</p>
             <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700 }}>Built on Trust, Powered by Technology</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
@@ -299,7 +298,7 @@ export default function HowItWorksPage() {
                   {f.icon}
                 </div>
                 <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, fontFamily: "'Source Sans 3', sans-serif" }}>{f.desc}</p>
+                <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, fontFamily: "'Inter', sans-serif" }}>{f.desc}</p>
               </div>
             ))}
           </div>
@@ -320,13 +319,13 @@ export default function HowItWorksPage() {
                     <div style={{ width: 64, height: 64, borderRadius: "50%", background: i === 4 ? "#10b981" : "rgba(255,255,255,0.12)", border: `2px solid ${i === 4 ? "#10b981" : "rgba(255,255,255,0.25)"}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", fontSize: 22 }}>
                       {["📝", "🔍", "💬", "🤝", "✅"][i]}
                     </div>
-                    <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.9, fontFamily: "'Source Sans 3', sans-serif" }}>{label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.9, fontFamily: "'Inter', sans-serif" }}>{label}</div>
                   </div>
                   {i < 4 && <div style={{ width: 40, height: 2, background: "rgba(255,255,255,0.2)", flexShrink: 0 }} />}
                 </div>
               ))}
             </div>
-            <p style={{ marginTop: 48, fontSize: 16, opacity: 0.7, fontFamily: "'Source Sans 3', sans-serif", maxWidth: 560, margin: "48px auto 0" }}>
+            <p style={{ marginTop: 48, fontSize: 16, opacity: 0.7, fontFamily: "'Inter', sans-serif", maxWidth: 560, margin: "48px auto 0" }}>
               From your first post to final resolution — we're with you every step of the way.
             </p>
           </div>
@@ -336,7 +335,7 @@ export default function HowItWorksPage() {
       {/* FAQ */}
       <section style={{ padding: "80px 24px", maxWidth: 780, margin: "0 auto" }}>
         <div ref={register("faq-head")} className={`reveal ${visible["faq-head"] ? "visible" : ""}`} style={{ textAlign: "center", marginBottom: 48 }}>
-          <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1.5, color: "#10b981", marginBottom: 12, fontFamily: "'Source Sans 3', sans-serif" }}>QUESTIONS & ANSWERS</p>
+          <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1.5, color: "#10b981", marginBottom: 12, fontFamily: "'Inter', sans-serif" }}>QUESTIONS & ANSWERS</p>
           <h2 style={{ fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700 }}>Frequently Asked Questions</h2>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -345,12 +344,12 @@ export default function HowItWorksPage() {
               style={{ transitionDelay: `${i * 0.05}s` }}>
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 style={{ width: "100%", textAlign: "left", padding: "20px 24px", background: "none", border: "none", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-                <span style={{ fontSize: 16, fontWeight: 600, color: "#1a1a2e", fontFamily: "'Playfair Display', Georgia, serif" }}>{faq.q}</span>
+                <span style={{ fontSize: 16, fontWeight: 600, color: "#1a1a2e", fontFamily: "'Inter', sans-serif" }}>{faq.q}</span>
                 <span style={{ color: "#64748b", flexShrink: 0 }}>{openFaq === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</span>
               </button>
               {openFaq === i && (
                 <div style={{ padding: "0 24px 20px", animation: "fadeIn 0.2s ease" }}>
-                  <p style={{ fontSize: 15, color: "#475569", lineHeight: 1.8, fontFamily: "'Source Sans 3', sans-serif" }}>{faq.a}</p>
+                  <p style={{ fontSize: 15, color: "#475569", lineHeight: 1.8, fontFamily: "'Inter', sans-serif" }}>{faq.a}</p>
                 </div>
               )}
             </div>
@@ -365,7 +364,7 @@ export default function HowItWorksPage() {
           <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, marginBottom: 16, color: "#0A1A3F" }}>
             Ready to Get Started?
           </h2>
-          <p style={{ fontSize: 17, color: "#475569", lineHeight: 1.7, marginBottom: 40, fontFamily: "'Source Sans 3', sans-serif" }}>
+          <p style={{ fontSize: 17, color: "#475569", lineHeight: 1.7, marginBottom: 40, fontFamily: "'Inter', sans-serif" }}>
             Join thousands of people who found the right legal help — or the right cases — through LawHelpZone.
           </p>
           <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
@@ -376,7 +375,7 @@ export default function HowItWorksPage() {
               Join as a Lawyer
             </button>
           </div>
-          <p style={{ marginTop: 20, fontSize: 13, color: "#94a3b8", fontFamily: "'Source Sans 3', sans-serif" }}>
+          <p style={{ marginTop: 20, fontSize: 13, color: "#94a3b8", fontFamily: "'Inter', sans-serif" }}>
             No credit card required · Free to post · Verified lawyers only
           </p>
         </div>

@@ -31,9 +31,8 @@ export default function PressPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         .press-card { background:white; border-radius:14px; border:1px solid #e2e8f0; padding:22px 24px; transition:all 0.3s; }
@@ -45,7 +44,7 @@ export default function PressPage() {
       <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#34d399", marginBottom: 12 }}>PRESS & MEDIA</p>
-          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginBottom: 16 }}>Press Room</h1>
+          <h1 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginBottom: 16 }}>Press Room</h1>
           <p style={{ opacity: 0.75, fontSize: 16, lineHeight: 1.7, maxWidth: 540, marginBottom: 28 }}>
             For media enquiries, interview requests, brand assets, and official statements about LawHelpZone.
           </p>
@@ -61,14 +60,14 @@ export default function PressPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 52 }}>
           {[["50,000+", "Cases Resolved"], ["1,200+", "Verified Lawyers"], ["40+", "Countries"], ["$32M", "Total Funding"]].map(([v, l], i) => (
             <div key={i} style={{ background: "white", borderRadius: 12, padding: "20px 16px", textAlign: "center", border: "1px solid #e2e8f0" }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 26, fontWeight: 700, color: "#0A1A3F" }}>{v}</div>
+              <div style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 26, fontWeight: 700, color: "#0A1A3F" }}>{v}</div>
               <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{l}</div>
             </div>
           ))}
         </div>
 
         {/* Press Coverage */}
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>In the Press</h2>
+        <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>In the Press</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 18, marginBottom: 52 }}>
           {pressItems.map((item, i) => (
             <div key={i} className="press-card">
@@ -88,7 +87,7 @@ export default function PressPage() {
         </div>
 
         {/* Awards */}
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>Awards & Recognition</h2>
+        <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>Awards & Recognition</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, marginBottom: 52 }}>
           {awards.map((a, i) => (
             <div key={i} style={{ background: "white", borderRadius: 14, padding: "22px 20px", border: "1px solid #e2e8f0", textAlign: "center" }}>
@@ -100,7 +99,7 @@ export default function PressPage() {
         </div>
 
         {/* Brand Assets */}
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>Brand Assets & Downloads</h2>
+        <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 26, fontWeight: 700, marginBottom: 24, color: "#0A1A3F" }}>Brand Assets & Downloads</h2>
         <div style={{ background: "white", borderRadius: 14, border: "1px solid #e2e8f0", overflow: "hidden", marginBottom: 52 }}>
           {assets.map((asset, i) => (
             <div key={i} className="asset-row" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: i < assets.length - 1 ? "1px solid #f1f5f9" : "none", transition: "background 0.15s" }}>
@@ -117,7 +116,7 @@ export default function PressPage() {
 
         {/* Contact */}
         <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", borderRadius: 20, padding: "40px 36px", color: "white", textAlign: "center" }}>
-          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 28, fontWeight: 700, marginBottom: 12 }}>Get in Touch</h2>
+          <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 28, fontWeight: 700, marginBottom: 12 }}>Get in Touch</h2>
           <p style={{ opacity: 0.75, fontSize: 15, lineHeight: 1.7, maxWidth: 440, margin: "0 auto 28px" }}>
             For interview requests, press enquiries, or speaking opportunities, our communications team is ready to help.
           </p>

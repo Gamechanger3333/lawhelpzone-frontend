@@ -265,9 +265,7 @@ export default function BecomeALawyerPage() {
       <Header />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div style={{ padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${LEGAL_IMAGES.gavel})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(10,26,63,0.94) 0%,rgba(30,58,110,0.9) 60%,rgba(26,53,96,0.94) 100%)" }} />
+      <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 60%,#1a3560 100%)", padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 20, padding: "6px 16px", marginBottom: 20, fontSize: 13, color: "#34d399", fontWeight: 700 }}>
             <Scale size={14} /> Join 500+ Lawyers on Our Platform
@@ -324,6 +322,15 @@ export default function BecomeALawyerPage() {
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <h2 style={{ margin: "0 0 12px", fontSize: "clamp(22px,3vw,32px)", fontWeight: 900, color: "var(--text-heading,#0f172a)" }}>How to Become a Lawyer in Pakistan</h2>
             <p style={{ margin: 0, fontSize: 15, color: "var(--text-muted,#64748b)" }}>Follow these 4 steps to launch your legal career</p>
+          </div>
+
+          {/* Real photo — clearly visible, no dark overlay */}
+          <div style={{ borderRadius: 20, overflow: "hidden", marginBottom: 32, boxShadow: "0 10px 30px -8px rgba(15,23,42,0.15)" }}>
+            <img
+              src={LEGAL_IMAGES.gavel}
+              alt="A gavel, representing the legal profession you're joining"
+              style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
+            />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 20 }}>
             {STEPS.map((step, i) => (

@@ -148,7 +148,7 @@ For EEA users, you also have the right to lodge a complaint with your local supe
   ];
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Hero */}

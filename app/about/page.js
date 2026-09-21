@@ -45,9 +45,8 @@ export default function AboutPage() {
   ];
 
   return (
-    <div style={{ fontFamily: "system-ui, -apple-system, sans-serif", background: "#fafafa", color: "#1a1a2e" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", background: "#fafafa", color: "#1a1a2e" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
         * { box-sizing: border-box; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
         .reveal { opacity:0; transform:translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
@@ -61,7 +60,7 @@ export default function AboutPage() {
       <section style={{ background: "linear-gradient(150deg, #0A1A3F, #1e3a6e)", color: "white", padding: "100px 24px 80px", textAlign: "center" }}>
         <div style={{ maxWidth: 720, margin: "0 auto", animation: "fadeUp 0.8s ease" }}>
           <p style={{ fontSize: 13, fontWeight: 600, letterSpacing: 2, color: "#34d399", marginBottom: 16 }}>OUR STORY</p>
-          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 24 }}>
+          <h1 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(42px, 6vw, 68px)", fontWeight: 900, lineHeight: 1.1, marginBottom: 24 }}>
             Justice Shouldn't<br />Be Out of Reach
           </h1>
           <p style={{ fontSize: 18, opacity: 0.82, lineHeight: 1.8, maxWidth: 560, margin: "0 auto 40px" }}>
@@ -78,7 +77,7 @@ export default function AboutPage() {
         <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
           {[["50,000+", "Cases Resolved"], ["1,200+", "Verified Lawyers"], ["40+", "Countries"], ["98%", "Satisfaction"]].map(([v, l], i) => (
             <div key={i} style={{ textAlign: "center", padding: "32px 16px", borderRight: i < 3 ? "1px solid #eee" : "none" }}>
-              <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 30, fontWeight: 700, color: "#0A1A3F" }}>{v}</div>
+              <div style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 30, fontWeight: 700, color: "#0A1A3F" }}>{v}</div>
               <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{l}</div>
             </div>
           ))}
@@ -90,7 +89,7 @@ export default function AboutPage() {
         <div ref={reg("mission")} className={`reveal ${visible["mission"] ? "visible" : ""}`} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60, alignItems: "center" }}>
           <div>
             <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: "#10b981", marginBottom: 12 }}>OUR MISSION</p>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, lineHeight: 1.2, marginBottom: 20 }}>
+            <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, lineHeight: 1.2, marginBottom: 20 }}>
               Democratizing Access to Legal Services
             </h2>
             <p style={{ fontSize: 15.5, color: "#475569", lineHeight: 1.8, marginBottom: 16 }}>
@@ -102,7 +101,7 @@ export default function AboutPage() {
           </div>
           <div style={{ background: "linear-gradient(135deg, #f0fdf4, #ecfdf5)", borderRadius: 20, padding: 40, textAlign: "center" }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>⚖️</div>
-            <blockquote style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontStyle: "italic", color: "#0A1A3F", lineHeight: 1.6 }}>
+            <blockquote style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 20, fontStyle: "italic", color: "#0A1A3F", lineHeight: 1.6 }}>
               "Legal help is a right, not a luxury. We exist to make that real."
             </blockquote>
             <p style={{ marginTop: 16, fontSize: 14, color: "#64748b", fontWeight: 500 }}>— Aisha Karimi, CEO</p>
@@ -115,14 +114,14 @@ export default function AboutPage() {
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <div ref={reg("vals-head")} className={`reveal ${visible["vals-head"] ? "visible" : ""}`} style={{ textAlign: "center", marginBottom: 48 }}>
             <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: "#10b981", marginBottom: 12 }}>WHAT WE STAND FOR</p>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Our Core Values</h2>
+            <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Our Core Values</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24 }}>
             {values.map((v, i) => (
               <div key={i} ref={reg(`val-${i}`)} className={`reveal ${visible[`val-${i}`] ? "visible" : ""}`}
                 style={{ background: "#f8fafc", borderRadius: 16, padding: 28, border: "1px solid #e2e8f0", transitionDelay: `${i * 0.1}s` }}>
                 <div style={{ width: 52, height: 52, borderRadius: 14, background: `${v.color}18`, color: v.color, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>{v.icon}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, fontFamily: "'Playfair Display', Georgia, serif" }}>{v.title}</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10, fontFamily: "'Inter', Georgia, serif" }}>{v.title}</h3>
                 <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.7 }}>{v.desc}</p>
               </div>
             ))}
@@ -135,7 +134,7 @@ export default function AboutPage() {
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div ref={reg("timeline-head")} className={`reveal ${visible["timeline-head"] ? "visible" : ""}`} style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: "#10b981", marginBottom: 12 }}>OUR JOURNEY</p>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Milestones</h2>
+            <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Milestones</h2>
           </div>
           <div style={{ position: "relative", paddingLeft: 40 }}>
             <div style={{ position: "absolute", left: 12, top: 0, bottom: 0, width: 2, background: "#e2e8f0" }} />
@@ -158,7 +157,7 @@ export default function AboutPage() {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div ref={reg("team-head")} className={`reveal ${visible["team-head"] ? "visible" : ""}`} style={{ textAlign: "center", marginBottom: 52 }}>
             <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 2, color: "#10b981", marginBottom: 12 }}>THE PEOPLE BEHIND IT</p>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Leadership Team</h2>
+            <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 700 }}>Leadership Team</h2>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
             {team.map((member, i) => (
@@ -179,7 +178,7 @@ export default function AboutPage() {
       {/* CTA */}
       <section style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "80px 24px", textAlign: "center" }}>
         <div ref={reg("cta")} className={`reveal ${visible["cta"] ? "visible" : ""}`} style={{ maxWidth: 560, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, marginBottom: 16 }}>Join Our Mission</h2>
+          <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, marginBottom: 16 }}>Join Our Mission</h2>
           <p style={{ fontSize: 16, opacity: 0.8, lineHeight: 1.7, marginBottom: 36 }}>
             Whether you're a client seeking help or a lawyer wanting to make a difference — LawHelpZone is for you.
           </p>

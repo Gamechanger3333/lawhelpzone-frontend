@@ -204,10 +204,8 @@ function BrowseLawyersContent() {
 
       <div style={{ minHeight: "100vh", background: "var(--chat-bg,#f8fafc)" }}>
         {/* Hero */}
-        <div style={{ position: "relative", overflow: "hidden", padding: "48px 20px 36px" }}>
-          <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${LEGAL_IMAGES.lawBooks})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg,rgba(10,26,63,0.94) 0%,rgba(30,58,110,0.9) 100%)" }} />
-          <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center", position: "relative" }}>
+        <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 100%)", padding: "48px 20px 36px" }}>
+          <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
             <h1 style={{ margin: "0 0 8px", fontSize: 34, fontWeight: 900, color: "#fff" }}>Browse Legal Experts</h1>
             <p style={{ margin: "0 0 28px", fontSize: 15, color: "rgba(255,255,255,0.65)" }}>
               Find and connect with verified, registered lawyers on LawHelpZone

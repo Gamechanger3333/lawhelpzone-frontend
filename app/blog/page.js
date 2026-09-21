@@ -35,9 +35,8 @@ export function BlogPage() {
   const regular = filtered.filter((p) => !p.featured);
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         .post-card { background:white; border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; transition:all 0.3s ease; cursor:pointer; }
@@ -51,7 +50,7 @@ export function BlogPage() {
       {/* Hero */}
       <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
-          <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 900, marginBottom: 12 }}>Legal <em style={{ color: "#34d399" }}>Insights</em></h1>
+          <h1 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 900, marginBottom: 12 }}>Legal <em style={{ color: "#34d399" }}>Insights</em></h1>
           <p style={{ opacity: 0.75, fontSize: 17, lineHeight: 1.7, maxWidth: 500, marginBottom: 28 }}>
             Practical legal knowledge, platform updates, and stories from our community.
           </p>
@@ -77,7 +76,7 @@ export function BlogPage() {
         {/* Featured Posts */}
         {featured.length > 0 && category === "all" && !search && (
           <div style={{ marginBottom: 48 }}>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, marginBottom: 20, color: "#0A1A3F" }}>Featured</h2>
+            <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 22, fontWeight: 700, marginBottom: 20, color: "#0A1A3F" }}>Featured</h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
               {featured.map((post) => (
                 <div key={post.id} className="post-card" onClick={() => router.push(`/blog/${post.id}`)}>
@@ -87,7 +86,7 @@ export function BlogPage() {
                       <span style={{ background: "#dbeafe", color: "#1d4ed8", padding: "3px 10px", borderRadius: 50, fontSize: 11, fontWeight: 600 }}>{post.category}</span>
                       <span style={{ fontSize: 12, color: "#94a3b8" }}>{post.date}</span>
                     </div>
-                    <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 700, color: "#0A1A3F", marginBottom: 10, lineHeight: 1.3 }}>{post.title}</h3>
+                    <h3 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 20, fontWeight: 700, color: "#0A1A3F", marginBottom: 10, lineHeight: 1.3 }}>{post.title}</h3>
                     <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.6, marginBottom: 16 }}>{post.excerpt}</p>
                     <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#3b82f6", fontSize: 13, fontWeight: 600 }}>
                       <Clock size={12} /> {post.readTime} <ArrowRight size={13} style={{ marginLeft: 4 }} />
@@ -101,7 +100,7 @@ export function BlogPage() {
 
         {/* Regular Posts */}
         <div>
-          {!search && category === "all" && <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 22, fontWeight: 700, marginBottom: 20, color: "#0A1A3F" }}>Latest</h2>}
+          {!search && category === "all" && <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 22, fontWeight: 700, marginBottom: 20, color: "#0A1A3F" }}>Latest</h2>}
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 24px", color: "#94a3b8" }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
@@ -117,7 +116,7 @@ export function BlogPage() {
                       <span style={{ background: "#f1f5f9", color: "#475569", padding: "2px 8px", borderRadius: 50, fontSize: 11, fontWeight: 600 }}>{post.category}</span>
                       <span style={{ fontSize: 11, color: "#94a3b8" }}>{post.date}</span>
                     </div>
-                    <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 17, fontWeight: 700, color: "#0A1A3F", marginBottom: 8, lineHeight: 1.35 }}>{post.title}</h3>
+                    <h3 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: 17, fontWeight: 700, color: "#0A1A3F", marginBottom: 8, lineHeight: 1.35 }}>{post.title}</h3>
                     <p style={{ fontSize: 13.5, color: "#64748b", lineHeight: 1.6, marginBottom: 14 }}>{post.excerpt}</p>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, color: "#3b82f6", fontSize: 12.5, fontWeight: 600 }}>
                       <Clock size={11} /> {post.readTime}

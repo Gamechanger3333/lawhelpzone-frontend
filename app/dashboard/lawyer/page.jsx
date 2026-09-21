@@ -190,9 +190,8 @@ export default function LawyerDashboard() {
   ];
 
   const css = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
     * { box-sizing: border-box; }
-    .ld-root { font-family: 'DM Sans', sans-serif; min-height: 100vh; color: #0f172a; padding: 28px 32px 60px; }
+    .ld-root { font-family: 'Inter', sans-serif; min-height: 100vh; color: #0f172a; padding: 28px 32px 60px; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:translateY(0) } }
     @keyframes spin   { to   { transform:rotate(360deg) } }
     @keyframes popIn  { from { transform:scale(0.6); opacity:0 } to { transform:scale(1); opacity:1 } }
@@ -202,8 +201,8 @@ export default function LawyerDashboard() {
     .stat-card:hover { transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,0.08); }
     .qa-btn { background:#fff; border:1px solid #f1f5f9; border-radius:14px; padding:16px 10px 14px; display:flex; flex-direction:column; align-items:center; gap:9px; cursor:pointer; transition:all 0.18s; position:relative; box-shadow:0 2px 8px rgba(0,0,0,0.04); }
     .qa-btn:hover { transform:translateY(-3px); box-shadow:0 10px 28px rgba(0,0,0,0.09); border-color:#e2e8f0; }
-    .qa-badge { position:absolute; top:7px; right:7px; min-width:17px; height:17px; border-radius:9px; background:#ef4444; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); font-family:'DM Mono',monospace; }
-    .tab-btn { padding:7px 18px; border-radius:20px; border:1px solid transparent; font-size:12.5px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+    .qa-badge { position:absolute; top:7px; right:7px; min-width:17px; height:17px; border-radius:9px; background:#ef4444; color:#fff; font-size:9px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; animation:popIn 0.25s cubic-bezier(0.34,1.56,0.64,1); font-family:'Inter',monospace; }
+    .tab-btn { padding:7px 18px; border-radius:20px; border:1px solid transparent; font-size:12.5px; font-weight:700; cursor:pointer; transition:all 0.15s; font-family:'Inter',sans-serif; }
     .tab-btn.active { background:#0A1A3F; color:#fff; }
     .tab-btn:not(.active) { background:#f1f5f9; color:#64748b; }
     .tab-btn:not(.active):hover { background:#e2e8f0; color:#475569; }
@@ -212,14 +211,14 @@ export default function LawyerDashboard() {
     .case-row:hover { background:#f8fafc; }
     .user-card { background:#f8fafc; border:1px solid #f1f5f9; border-radius:14px; padding:15px; transition:all 0.18s; }
     .user-card:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,0.07); border-color:#e2e8f0; }
-    .act-btn { flex:1; padding:7px 0; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; transition:opacity 0.15s,transform 0.12s; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:5px; border:none; }
+    .act-btn { flex:1; padding:7px 0; border-radius:8px; font-size:11.5px; font-weight:700; cursor:pointer; transition:opacity 0.15s,transform 0.12s; font-family:'Inter',sans-serif; display:flex; align-items:center; justify-content:center; gap:5px; border:none; }
     .act-btn:hover { opacity:0.82; transform:scale(0.97); }
     .side-card { background:#fff; border:1px solid #f1f5f9; border-radius:16px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,0.04); }
     .notif-row { padding:11px 18px; border-bottom:1px solid #f8fafc; transition:background 0.1s; }
     .notif-row:last-child { border-bottom:none; }
     .notif-row:hover { background:#f8fafc; }
     .notif-row.unread { border-left:3px solid #f59e0b; background:#fffbeb; }
-    .ld-input { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-family:'DM Sans',sans-serif; font-size:13px; outline:none; transition:border-color 0.15s,background 0.15s; }
+    .ld-input { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; color:#0f172a; font-family:'Inter',sans-serif; font-size:13px; outline:none; transition:border-color 0.15s,background 0.15s; }
     .ld-input:focus { border-color:#94a3b8; background:#fff; }
     .ld-input::placeholder { color:#94a3b8; }
     .online-dot { width:8px; height:8px; border-radius:50%; background:#10b981; animation:pulse2 2s infinite; display:inline-block; }
@@ -249,7 +248,7 @@ export default function LawyerDashboard() {
         {propCase && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)", padding: 20 }}
             onClick={() => setPropCase(null)}>
-            <div style={{ background: "#fff", border: "1px solid #f1f5f9", borderRadius: 20, maxWidth: 480, width: "100%", padding: 32, animation: "fadeUp 0.22s ease", boxShadow: "0 32px 64px rgba(0,0,0,0.15)", fontFamily: "'DM Sans', sans-serif" }}
+            <div style={{ background: "#fff", border: "1px solid #f1f5f9", borderRadius: 20, maxWidth: 480, width: "100%", padding: 32, animation: "fadeUp 0.22s ease", boxShadow: "0 32px 64px rgba(0,0,0,0.15)", fontFamily: "'Inter', sans-serif" }}
               onClick={(e) => e.stopPropagation()}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
                 <div>
@@ -271,11 +270,11 @@ export default function LawyerDashboard() {
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10, marginTop: 22 }}>
-                <button onClick={() => setPropCase(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontWeight: 600, cursor: "pointer", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                <button onClick={() => setPropCase(null)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#64748b", fontWeight: 600, cursor: "pointer", fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                   Cancel
                 </button>
                 <button onClick={sendProposal} disabled={propLoading || !propNote.trim()}
-                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: propLoading || !propNote.trim() ? "#f1f5f9" : "#10b981", color: propLoading || !propNote.trim() ? "#94a3b8" : "#fff", fontWeight: 700, cursor: propLoading || !propNote.trim() ? "default" : "pointer", fontSize: 13, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                  style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: propLoading || !propNote.trim() ? "#f1f5f9" : "#10b981", color: propLoading || !propNote.trim() ? "#94a3b8" : "#fff", fontWeight: 700, cursor: propLoading || !propNote.trim() ? "default" : "pointer", fontSize: 13, fontFamily: "'Inter', sans-serif", transition: "all 0.15s" }}>
                   {propLoading ? "Sending…" : "Send Proposal"}
                 </button>
               </div>
@@ -306,16 +305,16 @@ export default function LawyerDashboard() {
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => load(true)}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", transition: "all 0.15s" }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif", boxShadow: "0 1px 4px rgba(0,0,0,0.06)", transition: "all 0.15s" }}>
               <RefreshCw size={13} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
               Refresh
             </button>
             <button onClick={() => router.push("/dashboard/lawyer/earnings")}
-              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 16px", borderRadius: 10, background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>
               <DollarSign size={13} /> Earnings
             </button>
             <button onClick={() => router.push("/dashboard/lawyer/cases")}
-              style={{ padding: "9px 20px", borderRadius: 10, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+              style={{ padding: "9px 20px", borderRadius: 10, background: "#0A1A3F", color: "#fff", border: "none", fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
               View Cases
             </button>
           </div>
@@ -423,11 +422,11 @@ export default function LawyerDashboard() {
                             </p>
                             <div style={{ display: "flex", gap: 12 }}>
                               {c.category && <span style={{ fontSize: 11.5, color: "#3b82f6", fontWeight: 600 }}>{c.category}</span>}
-                              {c.budget > 0 && <span style={{ fontSize: 11.5, color: "#10b981", fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>PKR {c.budget.toLocaleString()}</span>}
+                              {c.budget > 0 && <span style={{ fontSize: 11.5, color: "#10b981", fontWeight: 700, fontFamily: "'Inter', monospace" }}>PKR {c.budget.toLocaleString()}</span>}
                             </div>
                           </div>
                           <button onClick={() => !hasProposed && setPropCase(c)} disabled={hasProposed}
-                            style={{ padding: "7px 16px", borderRadius: 9, background: hasProposed ? "#f0fdf4" : "#10b981", color: hasProposed ? "#10b981" : "#fff", border: hasProposed ? "1px solid #bbf7d0" : "none", fontWeight: 700, fontSize: 12, cursor: hasProposed ? "default" : "pointer", flexShrink: 0, fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
+                            style={{ padding: "7px 16px", borderRadius: 9, background: hasProposed ? "#f0fdf4" : "#10b981", color: hasProposed ? "#10b981" : "#fff", border: hasProposed ? "1px solid #bbf7d0" : "none", fontWeight: 700, fontSize: 12, cursor: hasProposed ? "default" : "pointer", flexShrink: 0, fontFamily: "'Inter', sans-serif", transition: "all 0.15s" }}>
                             {hasProposed ? "✓ Applied" : "Apply"}
                           </button>
                         </div>
@@ -489,11 +488,11 @@ export default function LawyerDashboard() {
               </div>
               <div style={{ padding: "12px 14px", display: "flex", gap: 8 }}>
                 <button onClick={() => router.push("/dashboard/lawyer/profile")}
-                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
                   ✏️ Edit Profile
                 </button>
                 <button onClick={() => router.push("/dashboard/lawyer/earnings")}
-                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "none", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                  style={{ flex: 1, padding: "9px 0", borderRadius: 10, border: "none", background: "#10b981", color: "#fff", fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                   <DollarSign size={12} /> Earnings
                 </button>
               </div>
@@ -510,7 +509,7 @@ export default function LawyerDashboard() {
                   )}
                 </div>
                 <button onClick={() => router.push("/dashboard/lawyer/notifications")}
-                  style={{ fontSize: 11.5, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>
+                  style={{ fontSize: 11.5, color: "#3b82f6", background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
                   View all →
                 </button>
               </div>
@@ -538,7 +537,7 @@ export default function LawyerDashboard() {
                 const Icon = l.icon;
                 return (
                   <button key={l.path} onClick={() => router.push(l.path)}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", background: "none", border: "none", cursor: "pointer", borderBottom: i < 5 ? "1px solid #f8fafc" : "none", fontFamily: "'DM Sans', sans-serif" }}>
+                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 2px", background: "none", border: "none", cursor: "pointer", borderBottom: i < 5 ? "1px solid #f8fafc" : "none", fontFamily: "'Inter', sans-serif" }}>
                     <span style={{ width: 28, height: 28, borderRadius: 8, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1px solid #f1f5f9" }}>
                       <Icon size={13} style={{ color: "#64748b" }} />
                     </span>
