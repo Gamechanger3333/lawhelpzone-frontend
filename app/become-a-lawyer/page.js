@@ -265,7 +265,7 @@ export default function BecomeALawyerPage() {
       <Header />
 
       {/* ── Hero ─────────────────────────────────────────────────────── */}
-      <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 60%,#1a3560 100%)", padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <div style={{ background: "#0A1A3F", padding: "64px 24px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ maxWidth: 700, margin: "0 auto", position: "relative", zIndex: 1 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 20, padding: "6px 16px", marginBottom: 20, fontSize: 13, color: "#34d399", fontWeight: 700 }}>
             <Scale size={14} /> Join 500+ Lawyers on Our Platform

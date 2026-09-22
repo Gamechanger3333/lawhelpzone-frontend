@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Star, MapPin, MessageSquare, Video,
-  SlidersHorizontal, Award,
+  SlidersHorizontal, Award, ShieldCheck, Users,
 } from "lucide-react";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
 import { resolveAvatarUrl } from "@/lib/avatar";
@@ -203,20 +203,27 @@ function BrowseLawyersContent() {
       `}</style>
 
       <div style={{ minHeight: "100vh", background: "var(--chat-bg,#f8fafc)" }}>
-        {/* Hero */}
-        <div style={{ background: "linear-gradient(135deg,#0A1A3F 0%,#1e3a6e 100%)", padding: "48px 20px 36px" }}>
+        {/* Hero — same navy as the home hero, same stat-row style */}
+        <div style={{ background: "#0A1A3F", padding: "48px 20px 36px" }}>
           <div style={{ maxWidth: 800, margin: "0 auto", textAlign: "center" }}>
             <h1 style={{ margin: "0 0 8px", fontSize: 34, fontWeight: 900, color: "#fff" }}>Browse Legal Experts</h1>
             <p style={{ margin: "0 0 28px", fontSize: 15, color: "rgba(255,255,255,0.65)" }}>
               Find and connect with verified, registered lawyers on LawHelpZone
             </p>
 
-            {/* Stats */}
+            {/* Stats — icon + number + label, matching the home page hero */}
             <div style={{ display: "flex", justifyContent: "center", gap: 32, marginBottom: 28, flexWrap: "wrap" }}>
-              {[["👩‍⚖️", total || "500+", "Registered Lawyers"], ["⭐", "4.8/5", "Average Rating"], ["✅", "10K+", "Cases Resolved"]].map(([icon, val, label]) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#fff" }}>{icon} {val}</p>
-                  <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{label}</p>
+              {[
+                { Icon: ShieldCheck, val: total || "500+", label: "Registered Lawyers" },
+                { Icon: Award,       val: "4.8/5",         label: "Average Rating"     },
+                { Icon: Users,       val: "10K+",          label: "Cases Resolved"     },
+              ].map(({ Icon, val, label }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <Icon size={24} style={{ color: "#93c5fd" }} />
+                  <div style={{ textAlign: "left" }}>
+                    <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.15 }}>{val}</p>
+                    <p style={{ margin: 0, fontSize: 12.5, color: "rgba(219,234,254,0.9)" }}>{label}</p>
+                  </div>
                 </div>
               ))}
             </div>
