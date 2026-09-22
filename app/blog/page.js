@@ -4,6 +4,8 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import { ArrowRight, Clock, Search, Tag } from "lucide-react";
 
 export function BlogPage() {
@@ -42,13 +44,13 @@ export function BlogPage() {
         .post-card { background:white; border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; transition:all 0.3s ease; cursor:pointer; }
         .post-card:hover { transform:translateY(-6px); box-shadow:0 16px 48px rgba(0,0,0,0.1); }
         .cat-chip { padding:7px 16px; border-radius:50px; font-size:13px; font-weight:500; cursor:pointer; border:1.5px solid transparent; transition:all 0.2s; }
-        .cat-chip.active { background:#0A1A3F; color:white; }
-        .cat-chip:not(.active) { background:white; color:#64748b; border-color:#e2e8f0; }
+        .cat-chip.active { background:#0A1A3F; color:white; }        .cat-chip:not(.active) { background:white; color:#64748b; border-color:#e2e8f0; }
         .cat-chip:not(.active):hover { border-color:#0A1A3F; color:#0A1A3F; }
       `}</style>
+      <Header />
 
       {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
+      <div style={{ background: "#0A1A3F", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 900, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
           <h1 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(36px, 5vw, 56px)", fontWeight: 900, marginBottom: 12 }}>Legal <em style={{ color: "#34d399" }}>Insights</em></h1>
           <p style={{ opacity: 0.75, fontSize: 17, lineHeight: 1.7, maxWidth: 500, marginBottom: 28 }}>
@@ -128,6 +130,7 @@ export function BlogPage() {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

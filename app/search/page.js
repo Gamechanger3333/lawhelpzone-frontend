@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, MapPin, Star, CheckCircle, Filter, Loader2, ChevronDown, MessageSquare, Video } from "lucide-react";
 import { useProtectedAction } from "@/hooks/useProtectedAction";
 import { resolveAvatarUrl } from "@/lib/avatar";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken = () => typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -282,8 +284,12 @@ function SearchContent() {
 /* ── Default Export wrapped in Suspense ──────────────────────────────────── */
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
-      <SearchContent />
-    </Suspense>
+    <>
+      <Header />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+        <SearchContent />
+      </Suspense>
+      <Footer />
+    </>
   );
 }

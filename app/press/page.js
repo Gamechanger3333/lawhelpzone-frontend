@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Download, ExternalLink, Mail, ArrowRight } from "lucide-react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 export default function PressPage() {
   const router = useRouter();
@@ -39,9 +41,10 @@ export default function PressPage() {
         .press-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,0.1); }
         .asset-row:hover { background:#f8fafc !important; }
       `}</style>
+      <Header />
 
       {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
+      <div style={{ background: "#0A1A3F", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
           <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, color: "#34d399", marginBottom: 12 }}>PRESS & MEDIA</p>
           <h1 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(32px, 5vw, 52px)", fontWeight: 900, marginBottom: 16 }}>Press Room</h1>
@@ -130,6 +133,7 @@ export default function PressPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

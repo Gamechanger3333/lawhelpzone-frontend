@@ -6,6 +6,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, ChevronRight, ExternalLink } from "lucide-react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 export function PrivacyPage() {
   const router = useRouter();
@@ -150,9 +152,10 @@ For EEA users, you also have the right to lodge a complaint with your local supe
   return (
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
       <style>{`* { box-sizing: border-box; margin: 0; padding: 0; } @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}`}</style>
+      <Header />
 
       {/* Hero */}
-      <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
+      <div style={{ background: "#0A1A3F", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
             <Shield size={22} color="#34d399" />
@@ -190,6 +193,7 @@ For EEA users, you also have the right to lodge a complaint with your local supe
           ))}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

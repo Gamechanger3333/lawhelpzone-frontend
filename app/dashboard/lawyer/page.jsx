@@ -229,7 +229,7 @@ export default function LawyerDashboard() {
   if (loading) return (
     <>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}body{background:#f1f5f9;margin:0;}`}</style>
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16, background: "#f1f5f9", fontFamily: "sans-serif" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16, background: "#f1f5f9", fontFamily: "'Inter', sans-serif" }}>
         <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTopColor: "#10b981", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
         <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>Loading dashboard…</p>
       </div>

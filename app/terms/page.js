@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { FileText, ChevronRight } from "lucide-react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 export default function TermsPage() {
   const [active, setActive] = useState(null);
@@ -114,8 +116,9 @@ For platform support: support@lawhelpzone.com` },
   return (
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", background: "#fafafa", minHeight: "100vh" }}>
       <style>{`* { box-sizing:border-box; margin:0; padding:0; } @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}} a{color:inherit}`}</style>
+      <Header />
 
-      <div style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "60px 24px 48px" }}>
+      <div style={{ background: "#0A1A3F", color: "white", padding: "60px 24px 48px" }}>
         <div style={{ maxWidth: 860, margin: "0 auto", animation: "fadeUp 0.6s ease" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
             <FileText size={20} color="#34d399" />
@@ -148,6 +151,7 @@ For platform support: support@lawhelpzone.com` },
           ))}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

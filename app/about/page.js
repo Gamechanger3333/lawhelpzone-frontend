@@ -1,6 +1,8 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import { ArrowRight, Users, Globe, Shield, Award, Heart, Target, Linkedin, Twitter } from "lucide-react";
 
 export default function AboutPage() {
@@ -46,6 +48,7 @@ export default function AboutPage() {
 
   return (
     <div style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", background: "#fafafa", color: "#1a1a2e" }}>
+      <Header />
       <style>{`
         * { box-sizing: border-box; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(28px)} to{opacity:1;transform:translateY(0)} }
@@ -176,7 +179,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ background: "linear-gradient(135deg, #0A1A3F, #1e3a6e)", color: "white", padding: "80px 24px", textAlign: "center" }}>
+      <section style={{ background: "#0A1A3F", color: "white", padding: "80px 24px", textAlign: "center" }}>
         <div ref={reg("cta")} className={`reveal ${visible["cta"] ? "visible" : ""}`} style={{ maxWidth: 560, margin: "0 auto" }}>
           <h2 style={{ fontFamily: "'Inter', Georgia, serif", fontSize: "clamp(28px, 4vw, 40px)", fontWeight: 700, marginBottom: 16 }}>Join Our Mission</h2>
           <p style={{ fontSize: 16, opacity: 0.8, lineHeight: 1.7, marginBottom: 36 }}>
@@ -192,6 +195,7 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

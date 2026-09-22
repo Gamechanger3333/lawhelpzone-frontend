@@ -3,6 +3,8 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Phone, Mail, MessageCircle, Calendar, User, FileText, MapPin } from "lucide-react";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 function ContactLawyerContent() {
   const searchParams = useSearchParams();
@@ -181,8 +183,12 @@ function ContactLawyerContent() {
 
 export default function ContactLawyerPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
-      <ContactLawyerContent />
-    </Suspense>
+    <>
+      <Header />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+        <ContactLawyerContent />
+      </Suspense>
+      <Footer />
+    </>
   );
 }

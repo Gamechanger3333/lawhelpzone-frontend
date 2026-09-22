@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 import {
   Search, UserCheck, MessageSquare, Scale, Shield, Clock,
   CheckCircle, ArrowRight, Star, Users, FileText, Video,
@@ -153,6 +155,7 @@ export default function HowItWorksPage() {
 
   return (
     <div style={{ fontFamily: "'Inter', sans-serif", background: "#f8f7f4", minHeight: "100vh", color: "#1a1a2e" }}>
+      <Header />
       <style>{`
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; }
@@ -380,6 +383,7 @@ export default function HowItWorksPage() {
           </p>
         </div>
       </section>
+      <Footer />
     </div>
   );
 }

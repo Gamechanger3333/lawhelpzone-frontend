@@ -10,6 +10,8 @@ import { useProtectedAction } from "@/hooks/useProtectedAction";
 import { resolveAvatarUrl } from "@/lib/avatar";
 import { LEGAL_IMAGES } from "@/lib/images";
 import LawyerSearchDropdown from "../components/LawyerSearchDropdown";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const getToken = () => typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -363,8 +365,12 @@ function BrowseLawyersContent() {
 /* ── Default Export wrapped in Suspense ──────────────────────────────────── */
 export default function BrowseLawyersPage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
-      <BrowseLawyersContent />
-    </Suspense>
+    <>
+      <Header />
+      <Suspense fallback={<div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+        <BrowseLawyersContent />
+      </Suspense>
+      <Footer />
+    </>
   );
 }
